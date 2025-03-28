@@ -40,20 +40,20 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'username' => 'required',
+            'email' => 'required',
             'password' => 'required',
         ]);
 
-        if (Auth::attempt($request->only('username', 'password'))) {
-            return redirect()->route('dashboard');
+        if (Auth::attempt($request->only('email', 'password'))) {
+            return redirect()->route('home');
         }
 
-        return back()->withErrors(['username' => 'Invalid credentials.']);
+        return back()->withErrors(['email' => 'Invalid credentials.']);
     }
 
     public function dashboard()
     {
-        return view('dashboard');
+        return view('home');
     }
 
     public function logout()

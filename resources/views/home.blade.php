@@ -2,6 +2,23 @@
 
 @section('content')
 <div class="container mt-5">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+        <a class="navbar-brand" href="#">Defender</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url('/home') }}">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url('/properties') }}">Properties</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url('/logout') }}">Logout</a>
+                </li>
+            </ul>
+            <a href="{{ route('showDepositFunds') }}" class="btn btn-primary ml-auto">Deposit Funds</a>
+        </div>
+    </nav>
     <div class="row">
         <div class="col-md-6">
             <div class="card mb-4">
@@ -113,6 +130,27 @@
             </div>
         </div>
     </div>
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3 class="card-title">Crowd Funding</h3>
+                    <p>Current Fund: €{{ $currentFund }}</p>
+                    <p>Target Fund: €{{ $targetFund }}</p>
+                    <div class="form-group">
+                        <label for="fundAmount">Contribute to Fund</label>
+                        <input
+                            type="number"
+                            id="fundAmount"
+                            class="form-control"
+                            oninput="handleFundAmountChange(event)"
+                        />
+                        <small id="fundAmountError" class="text-danger"></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -123,6 +161,20 @@
             autoInvestError = 'Balance is too low';
         }
         document.getElementById('autoInvestError').innerText = autoInvestError;
+    }
+
+    function handleFundAmountChange(e) {
+        const value = e.target.value;
+        let fundAmountError = '';
+        if (parseFloat(value) > {{ $availableCash }}) {
+            fundAmountError = 'Balance is too low';
+        }
+        document.getElementById('fundAmountError').innerText = fundAmountError;
+    }
+
+    function voteForCandidate(candidateId) {
+        // Implement the voting logic here
+        alert('Voted for candidate ' + candidateId);
     }
 </script>
 @endsection

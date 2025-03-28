@@ -1,0 +1,17 @@
+[] Get a prototype working to show off for funding
+[] Use python where yuo can for background stuff, see how you can use php to call and get json exports for the site.
+
+[] Get login system fully working and move it to the master branch
+[] For the love of god put in some unit tests
+
+
+[] Add a front end bidding system so people can put money down to buy properties
+[] Add the system to show people who want to rent the property and their detail (check what's legal and what's not)
+[] Back end system that only moderators can use
+
+=======Permissions======
+
+Add permissions - Spatie Laravel Permission:
+composer require spatie/laravel-permission
+
+Add the database stuff that actually makes the site work

@@ -53,12 +53,27 @@ class HomeController extends Controller
             'Monthly repayment of €4.30 by Dundalk Bay Sea Foods Limited (a year ago)',
         ];
 
+        $currentFund = 5000; // Example value
+        $targetFund = 10000; // Example value
+        $candidates = [
+            (object) ['id' => 1, 'name' => 'Candidate 1'],
+            (object) ['id' => 2, 'name' => 'Candidate 2'],
+            (object) ['id' => 3, 'name' => 'Candidate 3'],
+        ];
+
         return view('home', compact(
-            'totalDeposits', 'totalWithdrawals', 'loanSupport', 'totalInvested', 'principalRepaid', 'interestEarned',
-            'availableCash', 'liveInvestments', 'investorFee', 'balanceFee', 'remainingBalance', 'principalOutstanding',
-            'repayingLoansInvested', 'repayingLoansRepaid', 'repayingLoansEarned', 'finishedLoansInvested',
-            'finishedLoansRepaid', 'finishedLoansEarned', 'badDebtLoansInvested', 'badDebtLoansRepaid', 'badDebtLoansEarned',
-            'recentActivities'
+            'totalDeposits', 'totalWithdrawals', 'loanSupport', 'totalInvested', 
+            'principalRepaid', 'interestEarned', 'availableCash', 'liveInvestments', 
+            'investorFee', 'balanceFee', 'remainingBalance', 'recentActivities', 
+            'principalOutstanding', 'repayingLoansInvested', 'repayingLoansRepaid', 
+            'repayingLoansEarned', 'finishedLoansInvested', 'finishedLoansRepaid', 
+            'finishedLoansEarned', 'badDebtLoansInvested', 'badDebtLoansRepaid', 
+            'badDebtLoansEarned', 'currentFund', 'targetFund', 'candidates'
         ));
+    }
+
+    public function showDepositFunds()
+    {
+        return view('deposit_funds');
     }
 }

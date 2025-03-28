@@ -5,12 +5,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Models\User;
-// ...existing code...
 
 class RegisterController extends Controller
 {
-    // ...existing code...
-
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -26,7 +23,8 @@ class RegisterController extends Controller
         }
 
         // ...existing code to create user...
-    }
 
-    // ...existing code...
+        // Ensure no errors on the login page
+        return redirect()->route('login')->with('status', 'Registration successful! Please login.');
+    }
 }

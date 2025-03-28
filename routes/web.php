@@ -1,8 +1,12 @@
 <?php
 
 use App\Http\Controllers\AuthController;
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\PropertiesController;
+use App\Http\Controllers\PropertyController;
+use App\Http\Controllers\LoginController;
+use App\Http\Controllers\StripeController;
+use App\Http\Controllers\TestController;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,14 +28,17 @@ Auth::routes();
 Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
 Route::post('/register', [AuthController::class, 'register']);
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [AuthController::class, 'login']);
-Route::get('/dashboard', [AuthController::class, 'dashboard'])->middleware('auth')->name('dashboard');
+Route::post('/login', [AuthController::class, 'login']);//->middleware('auth')
+Route::get('/dashboard', [AuthController::class, 'dashboard'])->name('dashboard');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-Auth::routes();
-
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+Route::get('/properties', [PropertiesController::class, 'index'])->name('properties');
+Route::get('/properties/{id}', [PropertiesController::class, 'show'])->name('property.show');
 
-Auth::routes();
+Route::get('/payment', [StripeController::class, 'showPaymentForm'])->name('payment.form');
+Route::post('/payment', [StripeController::class, 'handlePayment'])->name('payment.handle');
 
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+Route::get('/testpayment', [TestController::class, 'testPayment'])->name('test.payment');
+
+Route::get('/deposit-funds', [HomeController::class, 'showDepositFunds'])->name('showDepositFunds');
