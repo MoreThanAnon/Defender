@@ -74,6 +74,6 @@ class HomeController extends Controller
 
     public function showDepositFunds()
     {
-        return view('deposit_funds');
+        return view('deposit_funds'); // Ensure this view exists
     }
 }

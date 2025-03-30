@@ -9,27 +9,9 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    public function showRegisterForm()
-    {
-        return view('auth.register');
-    }
 
-    public function register(Request $request)
-    {
-        $request->validate([
-            'username' => 'required|unique:users',
-            'password' => 'required|min:6',
-        ]);
 
-        $user = User::create([
-            'username' => $request->input('username'),
-            'password' => bcrypt($request->input('password')),
-            'updated_at' => now(),
-            'created_at' => now(),
-        ]);
 
-        return redirect()->route('login')->with('success', 'Registration successful!');
-    }
 
     public function showLoginForm()
     {

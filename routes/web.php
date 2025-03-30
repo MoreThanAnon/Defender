@@ -7,6 +7,8 @@ use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\StripeController;
 use App\Http\Controllers\TestController;
+use App\Http\Controllers\Auth\RegisterController;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,12 +27,13 @@ Route::get('/', function () {
 
 Auth::routes();
 
-Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
-Route::post('/register', [AuthController::class, 'register']);
+Route::get('/register', [RegisterController::class, 'showRegisterForm'])->name('register');
+Route::post('/register', [RegisterController::class, 'register']);
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);//->middleware('auth')
 Route::get('/dashboard', [AuthController::class, 'dashboard'])->name('dashboard');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 Route::get('/properties', [PropertiesController::class, 'index'])->name('properties');
@@ -42,3 +45,11 @@ Route::post('/payment', [StripeController::class, 'handlePayment'])->name('payme
 Route::get('/testpayment', [TestController::class, 'testPayment'])->name('test.payment');
 
 Route::get('/deposit-funds', [HomeController::class, 'showDepositFunds'])->name('showDepositFunds');
+
+Route::get('/test-payment', [TestController::class, 'testPayment']);
+
+// Add the route for email verification
+Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
+    $request->fulfill();
+    return redirect('/home');
+})->middleware(['auth', 'signed'])->name('verification.verify');

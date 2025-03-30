@@ -1,7 +1,8 @@
 [] Get a prototype working to show off for funding
-[] Use python where yuo can for background stuff, see how you can use php to call and get json exports for the site.
-
+[] Use python where you  can for background stuff, see how you can use php to call and get json exports for the site.
 [] Get login system fully working and move it to the master branch
+- SMTP server and mail to recover password (reset it)
+- SMTP server to send a secure way to confirm email is right
 [] For the love of god put in some unit tests
 
 
