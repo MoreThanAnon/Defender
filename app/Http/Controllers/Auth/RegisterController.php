@@ -42,7 +42,7 @@ class RegisterController extends Controller
         ]);
 
         // Send verification email
-        $this->sendEmailVerificationEmail($user);
+        //$this->sendEmailVerificationEmail($user);
 
         return redirect()->route('login')->with('success', 'Registration successful! Please verify your email.');
     }
@@ -66,6 +66,7 @@ class RegisterController extends Controller
 
     protected function sendEmailVerificationEmail($user)
     {
+        return;
         // Generate the verification URL with the user's ID and a hash of their email
         $verificationUrl = route('verification.verify', ['id' => $user->id, 'hash' => sha1($user->email)]);
 

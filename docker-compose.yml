@@ -1,6 +1,7 @@
+version: "3.8"
 services:
   postfix:
-    image: boky/postfix
+    image: catatnight/postfix
     container_name: postfix
     restart: always
     environment:
@@ -9,7 +10,6 @@ services:
       - SMTP_PORT=587
       - SMTP_USERNAME=no-reply@yourdomain.com
       - SMTP_PASSWORD=yourpassword
-      - ALLOWED_SENDER_DOMAINS=example.com
     ports:
       - "25:25"
       - "587:587"

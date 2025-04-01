@@ -45,6 +45,7 @@ class HomeController extends Controller
         $badDebtLoansInvested = 100.00;
         $badDebtLoansRepaid = 57.96;
         $badDebtLoansEarned = 16.06;
+
         $recentActivities = [
             'Monthly repayment of €4.32 by Dundalk Bay Sea Foods Limited (8 months ago)',
             'Monthly repayment of €4.32 by Dundalk Bay Sea Foods Limited (9 months ago)',
@@ -61,15 +62,33 @@ class HomeController extends Controller
             (object) ['id' => 3, 'name' => 'Candidate 3'],
         ];
 
-        return view('home', compact(
-            'totalDeposits', 'totalWithdrawals', 'loanSupport', 'totalInvested', 
-            'principalRepaid', 'interestEarned', 'availableCash', 'liveInvestments', 
-            'investorFee', 'balanceFee', 'remainingBalance', 'recentActivities', 
-            'principalOutstanding', 'repayingLoansInvested', 'repayingLoansRepaid', 
-            'repayingLoansEarned', 'finishedLoansInvested', 'finishedLoansRepaid', 
-            'finishedLoansEarned', 'badDebtLoansInvested', 'badDebtLoansRepaid', 
-            'badDebtLoansEarned', 'currentFund', 'targetFund', 'candidates'
-        ));
+        return view('home', [
+            'totalDeposits' => $totalDeposits,
+            'totalWithdrawals' => $totalWithdrawals,
+            'loanSupport' => $loanSupport,
+            'totalInvested' => $totalInvested,
+            'principalRepaid' => $principalRepaid,
+            'interestEarned' => $interestEarned,
+            'availableCash' => $availableCash,
+            'liveInvestments' => $liveInvestments,
+            'investorFee' => $investorFee,
+            'balanceFee' => $balanceFee,
+            'remainingBalance' => $remainingBalance,
+            'recentActivities' => $recentActivities,
+            'principalOutstanding' => $principalOutstanding,
+            'repayingLoansInvested' => $repayingLoansInvested,
+            'repayingLoansRepaid' => $repayingLoansRepaid,
+            'repayingLoansEarned' => $repayingLoansEarned,
+            'finishedLoansInvested' => $finishedLoansInvested,
+            'finishedLoansRepaid' => $finishedLoansRepaid,
+            'finishedLoansEarned' => $finishedLoansEarned,
+            'badDebtLoansInvested' => $badDebtLoansInvested,
+            'badDebtLoansRepaid' => $badDebtLoansRepaid,
+            'badDebtLoansEarned' => $badDebtLoansEarned,
+            'currentFund' => $currentFund,
+            'targetFund' => $targetFund,
+            'candidates' => $candidates,
+        ]);
     }
 
     public function showDepositFunds()

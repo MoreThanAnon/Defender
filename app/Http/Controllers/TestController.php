@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL; // For generating signed URLs
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Support\HtmlString; 
-use App\Mail\VerifyEmail; // Add this import
 
 class TestController extends Controller
 {

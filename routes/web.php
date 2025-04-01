@@ -34,10 +34,15 @@ Route::post('/login', [AuthController::class, 'login']);//->middleware('auth')
 Route::get('/dashboard', [AuthController::class, 'dashboard'])->name('dashboard');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::get('/home', [HomeController::class, 'index'])->name('home');
 
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+
+
 Route::get('/properties', [PropertiesController::class, 'index'])->name('properties');
 Route::get('/properties/{id}', [PropertiesController::class, 'show'])->name('property.show');
+
+Route::get('/property/create', [PropertyController::class, 'create'])->name('property.create');
+Route::post('/property/store', [PropertyController::class, 'store'])->name('property.store');
 
 Route::get('/payment', [StripeController::class, 'showPaymentForm'])->name('payment.form');
 Route::post('/payment', [StripeController::class, 'handlePayment'])->name('payment.handle');
@@ -53,3 +58,12 @@ Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $requ
     $request->fulfill();
     return redirect('/home');
 })->middleware(['auth', 'signed'])->name('verification.verify');
+
+
+Route::get('/moderator', function () {
+    return view('moderator');
+})->name('moderator');
+
+//Moderator routes
+
+//Admin routes
