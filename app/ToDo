@@ -1,10 +1,12 @@
 [] Get a prototype working to show off for funding
-[] Use python where you  can for background stuff, see how you can use php to call and get json exports for the site.
+
 [] Get login system fully working and move it to the master branch
 - SMTP server and mail to recover password (reset it)
 - SMTP server to send a secure way to confirm email is right
 [] For the love of god put in some unit tests
 
+Small Stuff
+[] Get message after registering that it went well and now they can login
 
 [] Add a front end bidding system so people can put money down to buy properties
 [] Add the system to show people who want to rent the property and their detail (check what's legal and what's not)
@@ -16,3 +18,98 @@ Add permissions - Spatie Laravel Permission:
 composer require spatie/laravel-permission
 
 Add the database stuff that actually makes the site work
+
+What You Should Do Next
+Consult an Intellectual Property (IP) Lawyer: They can assess if any part of your technology is patentable.
+
+Trademark Your Business Name & Logo: Prevent others from using your brand.
+
+Use Copyright & Trade Secrets: Keep critical parts of your code and strategy private.
+
+Consider an EU Patent: If you have a unique technical innovation (not just a business idea).
+
+1. Focus on a Unique Technical Feature for Local Control
+For your platform’s local control system, you'll need to develop innovative technical processes or systems that can be clearly differentiated from existing models. These could include the following ideas:
+
+A. Unique Governance Mechanism
+Novel Voting System: Develop a voting algorithm that only allows people living in the area to vote on key decisions like tenant selection, property management decisions, etc.
+
+Could be based on geolocation verification or community engagement metrics (e.g., residents have to be actively participating in community forums before they can vote).
+
+Could incorporate blockchain technology to ensure transparent, tamper-proof voting and decision-making.
+
+B. Smart Contracts for Local Control
+Use smart contracts to automate governance processes and ensure that decisions by local residents (e.g., what tenants can move in or which renovations to approve) are automatically enforced when specific conditions are met.
+
+For example, a smart contract could automatically trigger a property manager’s involvement once the local residents approve a decision.
+
+A unique smart contract design that automates local control could be patentable.
+
+C. Community Stakeholder Verification System
+Develop a system to verify local residency and validate community participation before allowing users to make decisions or vote on properties.
+
+Blockchain or biometric verification could be used to ensure that only local residents or verified community members have decision-making power.
+
+You could implement dynamic user profiling where a person’s engagement in the platform over time (e.g., attending community meetings, contributing to forums, etc.) could increase their voting power, adding an innovative spin to governance.
+
+D. Decentralized Autonomous Organization (DAO) Model for Local Control
+Create a DAO-like structure where the community of local investors has decentralized control over certain aspects of the property (e.g., rental income distribution, community rules).
+
+The DAO governance model could be adapted to a local context, giving residents the ability to vote on key decisions using a decentralized and automated voting system.
+
+If you combine blockchain technology and distributed ledger technology (DLT), you could claim that your platform creates a novel local governance system for real estate that’s never been implemented before.
+
+2. Use Data and Algorithms to Enhance Local Control
+Another way to make your local control system more patentable is by developing unique data algorithms or machine learning models that power local decision-making. Here are a few examples:
+
+A. Predictive Analytics for Property Decisions
+Develop predictive algorithms that analyze community trends, property values, and local preferences to help guide the decisions made by local investors.
+
+For example, you could create an algorithm that recommends which tenants are likely to fit best with a community or which types of properties are most suited for local growth based on historical data and community input.
+
+This kind of unique data-driven decision support system could be patented if it is not obvious and is a key part of your platform.
+
+B. Dynamic Community Sentiment Analysis
+Use natural language processing (NLP) to analyze feedback from community members (such as comments or forum posts) to determine the overall sentiment on decisions or investment opportunities.
+
+You could develop a unique sentiment analysis engine that helps aggregate and analyze local feedback to influence decisions made through the platform, which could provide more dynamic local control.
+
+3. Integrating Blockchain or Decentralized Technologies
+Blockchain or decentralized technologies are highly patentable if used in a unique and novel way. Here’s how it could apply to your system:
+
+A. Blockchain for Transparent Voting and Decision-Making
+If you integrate blockchain technology into your local control system, you could make every vote and decision publicly verifiable and tamper-proof.
+
+For example, each vote could be stored on the blockchain, and the platform could verify local residents through cryptographic proofs or digital IDs.
+
+This technology could offer a unique decentralized voting system that ensures only local residents have control over local decisions, making it a potential candidate for patenting.
+
+B. Distributed Ledger for Property Ownership and Local Investment Tracking
+Use a distributed ledger to track the ownership and investment by local residents in each property. The ledger would record all investments, decisions, and profits in a secure and transparent way.
+
+The use of blockchain in tracking ownership stakes and decisions by community members could be patented if it adds a novel approach to crowdfunding real estate with local control.
+
+4. User Interface and Experience
+The way your platform enables local control through the interface could also contribute to the patentability of your system. For instance:
+
+Interactive Dashboards for Local Governance: Design an intuitive UI that enables local residents to easily engage in decision-making processes, access property data, vote on changes, and track the results.
+
+You could patent the UI/UX if it has novel elements such as multi-layered voting systems, geolocation-based access, or dynamic user interactions specific to local control.
+
+Localized Decision-Making Tools: If you create unique user interface elements that are built specifically for managing local real estate investments (e.g., specialized voting buttons, neighborhood mapping, etc.), these could be eligible for design patents or utility patents if they are unique enough.
+
+5. Documentation and Collaboration
+To make sure you're maximizing patent protection:
+
+Document the Development Process: Keep detailed records of every step you take to design and implement your local control system. This includes prototypes, code versions, algorithm designs, and UI concepts.
+
+Work with an IP Lawyer: A patent attorney can help assess which parts of your local control system may be patentable and assist in filing for patents.
+
+Provisional Patent: You may want to file a provisional patent for your unique technology to establish your rights and buy time to refine your system before going for full patent protection.
+
+Conclusion
+If you focus on developing a technical innovation for local control (whether it's through smart contracts, blockchain, voting systems, algorithms, or UI/UX), you could potentially patent these innovations, especially if they meet the criteria of novelty and non-obviousness.
+
+A well-defined, technical approach to local control can help slow down competitors by making your system harder to replicate without violating your patents. If you’d like, I can help further with specific ideas or even how to structure your provisional patent filings!
+
+https://leosouthdublin.submit.com/candidate#/apply/105/10077/16870

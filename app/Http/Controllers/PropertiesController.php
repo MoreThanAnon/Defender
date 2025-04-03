@@ -15,33 +15,7 @@ class PropertiesController extends Controller
     public function index()
     {
         // Fetch properties data from the database
-        $properties = [
-            // Example properties data
-            (object) [
-                'id' => 1, 
-                'name' => 'Property 1', 
-                'price' => 250000, 
-                'beds' => 3, 
-                'baths' => 2, 
-                'type' => 'House',
-                'size' => 120,
-                'berRating' => 'B2',
-                'address' => '123 Main St, City, Country',
-                'description' => 'A beautiful house located in the heart of the city.'
-            ],
-            (object) [
-                'id' => 2, 
-                'name' => 'Property 2', 
-                'price' => 300000, 
-                'beds' => 4, 
-                'baths' => 3, 
-                'type' => 'Apartment',
-                'size' => 150,
-                'berRating' => 'A1',
-                'address' => '456 Elm St, City, Country',
-                'description' => 'A spacious apartment with modern amenities.'
-            ],
-        ];
+        $properties = Property::all();
 
         return view('properties', compact('properties'));
     }
@@ -75,6 +49,8 @@ class PropertiesController extends Controller
             'features' => $property->features ?? [],
             'id' => $property->id,
             'auctioneerName' => $property->auctioneer_name ?? 'Unknown',
+            'collectiveFund' => 0, // Placeholder
+            'fundGoal'=> 1, // Placeholder
             'latitude' => $property->latitude ?? 0,
             'longitude' => $property->longitude ?? 0
         ]);

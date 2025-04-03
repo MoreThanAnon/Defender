@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Property;
+use Illuminate\Support\Facades\DB;
 
 class PropertyController extends Controller
 {
@@ -12,32 +13,54 @@ class PropertyController extends Controller
         //$this->middleware(['auth', 'role:moderator,admin'])->only('store');
     }
 
+    public function bid (Request $request, $id)
+    {
+        $request->validate([
+            'bidAmount' => 'required|numeric|min:1',
+        ]);
+        //Check if user has sufficient funds
+        $user = auth()->user();
+        
+        // Assuming you have a bids table to store bids
+        DB::table('bids')->insert([
+            'property_id' => $id,
+            'user_id' => auth()->id(),
+            'amount' => $request->bidAmount,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'Your bid has been placed successfully.');
+    }
+
     public function show($id)
     {
-        $property = Property::find($id);
+        $property = Property::findOrFail($id);
 
-        if (!$property) {
-            abort(404, 'Property not found');
-        }
+        // Example values for collective fund and goal
+        $collectiveFund = $property->collective_fund ?? 0; // Assuming 'collective_fund' is a column in the properties table
+        $fundGoal = $property->fund_goal ?? 100000; // Assuming 'fund_goal' is a column in the properties table
 
         return view('property', [
-            'name' => $property->name ?? 'N/A',
-            'price' => $property->price ?? 0,
-            'beds' => $property->beds ?? 0,
-            'baths' => $property->baths ?? 0,
-            'size' => $property->size ?? 0,
-            'type' => $property->type ?? 'unknown',
-            'berRating' => $property->ber_rating ?? 'N/A',
-            'address' => $property->address ?? 'No address provided',
-            'description' => $property->description ?? 'No description available',
-            'saleType' => $property->sale_type ?? 'N/A',
-            'stampDuty' => $property->stamp_duty ?? 0,
-            'features' => $property->features ?? [],
             'id' => $property->id,
-            'auctioneerName' => $property->auctioneer_name ?? 'Unknown',
-            'latitude' => $property->latitude ?? 0,
-            'longitude' => $property->longitude ?? 0,
-            'images' => [],
+            'name' => $property->name,
+            'price' => $property->price,
+            'beds' => $property->beds,
+            'baths' => $property->baths,
+            'size' => $property->size,
+            'type' => $property->type,
+            'berRating' => $property->ber_rating,
+            'address' => $property->address,
+            'description' => $property->description,
+            'images' => $property->images,
+            'features' => $property->features,
+            'saleType' => $property->sale_type,
+            'stampDuty' => $property->stamp_duty,
+            'latitude' => $property->latitude,
+            'longitude' => $property->longitude,
+            'auctioneerName' => $property->auctioneer_name,
+            'collectiveFund' => $collectiveFund,
+            'fundGoal' => $fundGoal,
         ]);
     }
     /**
@@ -96,7 +119,18 @@ class PropertyController extends Controller
         if ($request->hasFile('images')) {
             // Handle image upload logic
         }
-        return redirect()->route('properties.show', $id)->with('success', 'Property updated successfully.');
+        return redirect()->route('property.show', $id)->with('success', 'Property updated successfully.');
+    }
+
+    public function addToFund(Request $request, $id)
+    {
+        $request->validate([
+            'fundAmount' => 'required|numeric|min:1',
+        ]);
+
+        DB::table('properties')->where('id', $id)->increment('collective_fund', $request->fundAmount);
+
+        return redirect()->back()->with('success', 'Your contribution has been added to the collective fund.');
     }
 
 }

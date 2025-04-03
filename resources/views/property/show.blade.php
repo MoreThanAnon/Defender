@@ -28,7 +28,7 @@
                     <h3 class="card-title">{{ $property->name }}</h3>
                     <p class="text-muted">€{{ number_format($property->price) }}</p>
                     <p class="card-text">
-                        <strong>{{ $property->beds }}</strong> Bed • 
+                        <strong>{{ $property->beds }}</strong> Bedssssssssssssss • 
                         <strong>{{ $property->baths }}</strong> Bath • 
                         <strong>{{ $property->size }}</strong> m² • 
                         {{ ucfirst($property->type) }}

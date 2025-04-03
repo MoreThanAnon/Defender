@@ -26,6 +26,7 @@ class Property extends Model
         'latitude',
         'longitude',
         'images',
+        'collective_fund',
     ];
 
     protected $casts = [

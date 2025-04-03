@@ -50,6 +50,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         // Assuming the User model has a relationship with roles
         // Adjust the logic based on your database structure
+        
         return $this->roles()->where('name', $role)->exists();
     }
 
@@ -58,4 +59,11 @@ class User extends Authenticatable implements MustVerifyEmail
         // Define the relationship between User and Role
         return $this->belongsToMany(Role::class);
     }
+
+    public function users()
+    {
+        return $this->belongsToMany(User::class);
+    }
 }
+
+

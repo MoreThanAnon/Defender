@@ -9,6 +9,7 @@ use App\Http\Controllers\StripeController;
 use App\Http\Controllers\TestController;
 use App\Http\Controllers\Auth\RegisterController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use App\Http\Controllers\StripeWebhookController;
 
 /*
 |--------------------------------------------------------------------------
@@ -40,6 +41,10 @@ Route::get('/home', [HomeController::class, 'index'])->name('home');
 
 Route::get('/properties', [PropertiesController::class, 'index'])->name('properties');
 Route::get('/properties/{id}', [PropertiesController::class, 'show'])->name('property.show');
+Route::get('/properties/{id}/edit', [PropertyController::class, 'edit'])->name('properties.edit');
+Route::put('/properties/{id}', [PropertyController::class, 'update'])->name('properties.update');
+Route::post('/properties/{id}/fund', [PropertyController::class, 'addToFund'])->middleware('auth');
+Route::post('/properties/{id}/bid', [PropertyController::class, 'bid'])->name('properties.bid');
 
 Route::get('/property/create', [PropertyController::class, 'create'])->name('property.create');
 Route::post('/property/store', [PropertyController::class, 'store'])->name('property.store');
@@ -67,3 +72,5 @@ Route::get('/moderator', function () {
 //Moderator routes
 
 //Admin routes
+
+Route::post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook']);
