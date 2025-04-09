@@ -13,6 +13,7 @@ class TestController extends Controller
 {
     public function testPayment()
     {
+        $this->testMe("D02X285");die;
         $this->sendEmailVerificationEmail();die;
         //https://dashboard.stripe.com/test/apikeys
         $amount = 50; // Amount in dollars
@@ -22,6 +23,32 @@ class TestController extends Controller
 
         $stripeController = new StripeController();
         return $stripeController->testhandlePayment($amount, $currency, $source, $description);
+    }
+
+    public function testMe($eircode)
+    {
+        $output = [];
+        $returnCode = 0;
+
+        // Debug: Log the command being executed
+        $command = 'C:\Users\DELL\AppData\Local\Programs\Python\Python37-32\python.exe C:\wamp644\www\defender\storage\scripts\location.py "https://www.google.com/maps/place/' . $eircode . '" 2>&1';
+        echo "Executing command: $command\n";
+
+        exec($command, $output, $returnCode);
+
+        // Debug: Log the output and return code
+        echo "Command output:\n";
+        var_dump($output);
+
+        echo "Return code: $returnCode\n";
+
+        if ($returnCode !== 0) {
+            echo "An error occurred while executing the script. Return code: $returnCode\n";
+            var_dump($output);
+        } else {
+            echo "Script executed successfully. Output:\n";
+            var_dump($output);
+        }
     }
 
     public function sendEmailVerificationEmail()

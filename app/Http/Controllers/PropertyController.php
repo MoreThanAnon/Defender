@@ -3,7 +3,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Property;
+use App\Models\Bid;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class PropertyController extends Controller
 {
@@ -18,10 +20,14 @@ class PropertyController extends Controller
         $request->validate([
             'bidAmount' => 'required|numeric|min:1',
         ]);
-        //Check if user has sufficient funds
         $user = auth()->user();
-        
-        // Assuming you have a bids table to store bids
+
+        // Check if user has sufficient funds
+        if (!$user->userHasSufficientFunds($request->bidAmount)) {
+            return redirect()->back()->withErrors(['error' => 'Insufficient funds to place this bid.']);
+        }
+
+        /* Assuming you have a bids table to store bids
         DB::table('bids')->insert([
             'property_id' => $id,
             'user_id' => auth()->id(),
@@ -29,17 +35,43 @@ class PropertyController extends Controller
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+        */
 
         return redirect()->back()->with('success', 'Your bid has been placed successfully.');
+    }
+
+    public function placeBid(Request $request, $id)
+    {
+        $request->validate([
+            'bidAmount' => 'required|numeric|min:1',
+        ]);
+
+        $property = Property::findOrFail($id);
+        $user = auth()->user();
+
+        // Check if the user has enough funds
+        if ($user->funds < $request->bidAmount) {
+            return redirect()->back()->with('error', 'You do not have enough funds to place this bid.');
+        }
+
+        // Deduct the bid amount from the user's funds
+        $user->funds -= $request->bidAmount;
+        $user->save();
+
+        // Create a new bid entry
+        Bid::create([
+            'property_id' => $property->id,
+            'user_id' => $user->id,
+            'amount' => $request->bidAmount,
+            'status' => 'pending', // Default status
+        ]);
+
+        return redirect()->back()->with('success', 'Your bid has been placed successfully!');
     }
 
     public function show($id)
     {
         $property = Property::findOrFail($id);
-
-        // Example values for collective fund and goal
-        $collectiveFund = $property->collective_fund ?? 0; // Assuming 'collective_fund' is a column in the properties table
-        $fundGoal = $property->fund_goal ?? 100000; // Assuming 'fund_goal' is a column in the properties table
 
         return view('property', [
             'id' => $property->id,
@@ -49,18 +81,21 @@ class PropertyController extends Controller
             'baths' => $property->baths,
             'size' => $property->size,
             'type' => $property->type,
-            'berRating' => $property->ber_rating,
+            'ber_rating' => $property->ber_rating, // Include BER rating
+            'eircode' => $property->eircode,
             'address' => $property->address,
             'description' => $property->description,
-            'images' => $property->images,
             'features' => $property->features,
-            'saleType' => $property->sale_type,
-            'stampDuty' => $property->stamp_duty,
+            'images' => $property->images,
             'latitude' => $property->latitude,
             'longitude' => $property->longitude,
+            'saleType' => $property->sale_type,
+            'stampDuty' => $property->stamp_duty,
             'auctioneerName' => $property->auctioneer_name,
-            'collectiveFund' => $collectiveFund,
-            'fundGoal' => $fundGoal,
+            'collectiveFund' => $property->collective_fund,
+            'fundGoal' => $property->fund_goal,
+            'bids' => $property->bids,
+            'daft_link' => $property->daft_link, 
         ]);
     }
     /**
@@ -72,33 +107,46 @@ class PropertyController extends Controller
     {
         return view('property.create');
     }
+
     public function store(Request $request)
-    {   
-        $validatedData = $request->validate([
+    {
+        $request->validate([
             'name' => 'required|string|max:255',
             'price' => 'required|numeric',
             'beds' => 'required|integer',
             'baths' => 'required|integer',
             'size' => 'required|numeric',
             'type' => 'required|string|max:255',
-            'ber_rating' => 'nullable|string|max:255',
-            'address' => 'required|string|max:500',
-            'description' => 'nullable|string',
-            'sale_type' => 'required|string|max:255',
-            'stamp_duty' => 'nullable|numeric',
-            'features' => 'nullable|array',
-            'auctioneer_name' => 'nullable|string|max:255',
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
-            'images' => 'nullable|array',
+            'berRating' => 'required|string|max:255',
+            'address' => 'required|string',
+            'eircode' => 'required|string|max:20',
+            'description' => 'required|string',
+            'features' => 'nullable|string',
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Validate each image
         ]);
 
-        // Save the property to the database
-        $property = Property::create($validatedData);
+        $propertyData = $request->except('images');
 
-        // Redirect with success message
-        return redirect()->route('property.show', $property->id)
-                         ->with('success', 'Property uploaded successfully.');
+        // Handle features as an array
+        if ($request->has('features')) {
+            $propertyData['features'] = explode(',', $request->features);
+        }
+
+        // Handle image uploads
+        if ($request->hasFile('images')) {
+            $uploadedImages = [];
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('properties', 'public'); // Store in 'storage/app/public/properties'
+                $uploadedImages[] = $path;
+            }
+            $propertyData['images'] = $uploadedImages; // Save image paths as an array
+        }
+
+        $property = Property::create($propertyData);
+
+        return redirect()->route('properties.index')->with('success', 'Property created successfully!');
     }
 
     public function edit($id)
@@ -114,12 +162,26 @@ class PropertyController extends Controller
 
     public function update(Request $request, $id)
     {
+        $validatedData = $request->validate([
+            'name' => 'required|string|max:255',
+            'price' => 'required|numeric',
+            'beds' => 'required|integer',
+            'baths' => 'required|integer',
+            'size' => 'required|numeric',
+            'type' => 'required|string|max:50',
+            'berRating' => 'nullable|string|max:10',
+            'address' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'daft_link' => 'nullable|url'
+        ]);
+
         $property = Property::findOrFail($id);
-        $property->update($request->all());
-        if ($request->hasFile('images')) {
-            // Handle image upload logic
-        }
-        return redirect()->route('property.show', $id)->with('success', 'Property updated successfully.');
+        $property->update($validatedData);
+
+        // Redirect to the property page after updating
+        return redirect()->route('property.show', $property->id)->with('success', 'Property updated successfully!');
     }
 
     public function addToFund(Request $request, $id)

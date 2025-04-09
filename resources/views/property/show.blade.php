@@ -28,12 +28,13 @@
                     <h3 class="card-title">{{ $property->name }}</h3>
                     <p class="text-muted">€{{ number_format($property->price) }}</p>
                     <p class="card-text">
-                        <strong>{{ $property->beds }}</strong> Bedssssssssssssss • 
+                        <strong>{{ $property->beds }}</strong> Beds • 
                         <strong>{{ $property->baths }}</strong> Bath • 
                         <strong>{{ $property->size }}</strong> m² • 
                         {{ ucfirst($property->type) }}
                     </p>
                     <p class="card-text">BER Rating: <strong>{{ $property->berRating }}</strong></p>
+
                     <hr>
                     <p class="card-text"><em>{{ $property->address }}</em></p>
                     <p class="card-text">{{ $property->description }}</p>

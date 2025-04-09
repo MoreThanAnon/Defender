@@ -4,6 +4,18 @@
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-lg-8">
+            @if(session('success'))
+                <div class="alert alert-success">
+                    {{ session('success') }}
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="alert alert-danger">
+                    {{ session('error') }}
+                </div>
+            @endif
+
             <!-- Property Images Carousel -->
             <div id="propertyImagesCarousel" class="carousel slide mb-4" data-ride="carousel">
                 <div class="carousel-inner">
@@ -32,17 +44,34 @@
             <div class="card shadow-sm mb-4">
                 <div class="card-body text-center">
                     <h3 class="card-title">{{ $name }}</h3>
-                    <p class="text-muted">€{{ number_format($price) }}</p>
-                    <p class="card-text">
-                        <strong>{{ $beds }}</strong> Bed • 
-                        <strong>{{ $baths }}</strong> Bath • 
-                        <strong>{{ $size }}</strong> m² • 
-                        {{ ucfirst($type) }}
-                    </p>
-                    <p class="card-text">BER Rating: <strong>{{ $berRating }}</strong></p>
-                    <hr>
+                    <p class="text-muted">€{{ number_format($price, 2) }}</p>
                     <p class="card-text"><em>{{ $address }}</em></p>
-                    <p class="card-text">{{ $description }}</p>
+                   <ul class="list-group list-group-flush">
+                        <li class="list-group-item"><strong>Sale Type:</strong> {{ $saleType ?? 'N/A' }}</li>
+                        <li class="list-group-item"><strong>Stamp Duty:</strong> €{{ number_format($stampDuty, 2) ?? 'N/A' }}</li>
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title">Description</h5>
+                                <hr>
+                                <p class="card-text text-justify" style="white-space: pre-wrap; line-height: 1.6;">
+                                    {{ $description ?? 'No description available.' }}
+                                </p>
+                            </div>
+                        </div> 
+                        <li class="list-group-item"><strong>Features:</strong>
+                            <ul class="pl-3" style="list-style-type: disc;">
+                                @if(isset($features) && is_array($features))
+                                    @foreach($features as $feature)
+                                        <li style="margin-left: 0;">{{ $feature }}</li>
+                                    @endforeach
+                                @else
+                                    <li>No features listed.</li>
+                                @endif
+                            </ul>
+                        </li>
+                    </ul>
+                    <hr>
+                    <p class="card-text"><strong>Auctioneer:</strong> {{ $auctioneerName ?? 'N/A' }}</p>
 
                     @if(auth()->check() && in_array(auth()->user()->role, ['moderator', 'admin']))
                         <!-- Edit Property Button -->
@@ -52,21 +81,6 @@
                     @if(auth()->check())
                         <p class="text-muted">User Role: {{ auth()->user()->role }}</p>
                     @endif
-
-                    <!-- Property Features -->
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item"><strong>Sale Type:</strong> {{ $saleType }}</li>
-                        <li class="list-group-item"><strong>Stamp Duty:</strong> €{{ number_format($stampDuty) }}</li>
-                        <li class="list-group-item"><strong>Features:</strong>
-                            <ul>
-                                @if(isset($features) && is_array($features))
-                                    @foreach($features as $feature)
-                                        <li>{{ $feature }}</li>
-                                    @endforeach
-                                @endif
-                            </ul>
-                        </li>
-                    </ul>
 
                     @if(auth()->check() && auth()->user()->role === 'user')
                         <!-- Place a Bid Form -->
@@ -78,6 +92,68 @@
                             </div>
                             <button type="submit" class="btn btn-primary mt-3">Submit Bid</button>
                         </form>
+                    @endif
+
+                    @if(isset($property) && $property->images)
+                        <div class="form-group">
+                            <label>Uploaded Images</label>
+                            <div class="row">
+                                @foreach($property->images as $image)
+                                    <div class="col-md-3">
+                                        <img src="{{ asset('storage/' . $image) }}" class="img-thumbnail" alt="Property Image">
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Property Details</h5>
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="card-text">
+                                <strong>Beds:</strong> {{ $beds }}<br>
+                                <strong>Baths:</strong> {{ $baths }}<br>
+                                <strong>Size:</strong> {{ $size }} m²<br>
+                                <strong>Type:</strong> {{ ucfirst($type) }}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="card-text">
+                                <strong>BER Rating:</strong> {{ $ber_rating ?? 'N/A' }}<br>
+                                <strong>Eircode:</strong> {{ $eircode ?? 'N/A' }}<br>
+                                <strong>Daft.ie:</strong> 
+                                @if($daft_link)
+                                    <a href="{{ $daft_link }}" target="_blank">View Listing</a>
+                                @else
+                                    N/A
+                                @endif
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Bids</h5>
+                    <hr>
+                    @if(isset($bids) && $bids->isNotEmpty())
+                        <ul class="list-group">
+                            @foreach($bids as $bid)
+                                <li class="list-group-item">
+                                    <strong>{{ $bid->user->name }}</strong> placed a bid of 
+                                    <strong>€{{ number_format($bid->amount, 2) }}</strong> on 
+                                    {{ $bid->created_at->format('d M Y, H:i') }}
+                                </li>
+                            @endforeach
+                        </ul>
+                    @else
+                        <p class="text-muted">No bids have been placed yet.</p>
                     @endif
                 </div>
             </div>
@@ -103,13 +179,22 @@
             <!-- Map Section -->
             <div id="map" class="mt-4" style="height: 400px;"></div>
             <script>
-                function initMap() {
-                    var propertyLocation = { lat: {{ $latitude }}, lng: {{ $longitude }} };
-                    var map = new google.maps.Map(document.getElementById('map'), { zoom: 15, center: propertyLocation });
-                    new google.maps.Marker({ position: propertyLocation, map: map });
-                }
+                document.addEventListener('DOMContentLoaded', function () {
+                    var propertyLocation = [{{ $latitude }}, {{ $longitude }}];
+                    var map = L.map('map').setView(propertyLocation, 15);
+
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        maxZoom: 19,
+                        attribution: '© OpenStreetMap contributors'
+                    }).addTo(map);
+
+                    L.marker(propertyLocation).addTo(map)
+                        .bindPopup('<b>{{ $name }}</b><br>{{ $address }}')
+                        .openPopup();
+                });
             </script>
-            <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap"></script>
+            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+            <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
         </div>
         <div class="col-lg-4">
             <!-- Collective Fund Section -->
@@ -184,5 +269,16 @@
 }
 .list-group-item {
     font-size: 1.1rem;
+}
+.list-group-item ul {
+    padding-left: 20px; /* Add padding to align bullets properly */
+    list-style-type: disc; /* Use disc bullets */
+    list-style-position: outside; /* Position bullets outside the text */
+}
+
+.list-group-item ul li {
+    margin-left: 0; /* Remove extra margin */
+    line-height: 1.5; /* Improve readability */
+    text-align: left; /* Ensure text is aligned to the left */
 }
 </style>

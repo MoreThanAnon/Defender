@@ -10,6 +10,9 @@ use App\Http\Controllers\TestController;
 use App\Http\Controllers\Auth\RegisterController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use App\Http\Controllers\StripeWebhookController;
+use App\Http\Controllers\CustomerController;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 
 /*
 |--------------------------------------------------------------------------
@@ -39,12 +42,13 @@ Route::get('/home', [HomeController::class, 'index'])->name('home');
 
 
 
-Route::get('/properties', [PropertiesController::class, 'index'])->name('properties');
+Route::get('/properties', [PropertiesController::class, 'index'])->name('properties.index');
 Route::get('/properties/{id}', [PropertiesController::class, 'show'])->name('property.show');
 Route::get('/properties/{id}/edit', [PropertyController::class, 'edit'])->name('properties.edit');
 Route::put('/properties/{id}', [PropertyController::class, 'update'])->name('properties.update');
 Route::post('/properties/{id}/fund', [PropertyController::class, 'addToFund'])->middleware('auth');
 Route::post('/properties/{id}/bid', [PropertyController::class, 'bid'])->name('properties.bid');
+Route::post('/properties/{id}/bid', [PropertiesController::class, 'placeBid'])->name('properties.placeBid');
 
 Route::get('/property/create', [PropertyController::class, 'create'])->name('property.create');
 Route::post('/property/store', [PropertyController::class, 'store'])->name('property.store');
@@ -74,3 +78,18 @@ Route::get('/moderator', function () {
 //Admin routes
 
 Route::post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook']);
+
+Route::middleware('auth')->group(function () {
+    Route::get('/customer/edit', [CustomerController::class, 'edit'])->name('customer.edit');
+    Route::put('/customer/update', [CustomerController::class, 'update'])->name('customer.update');
+});
+
+Route::get('/customers', [CustomerController::class, 'index'])->name('customer.index');
+
+Route::get('/api/eircode/{eircode}', function ($eircode) {
+    // Simulate a call to the Python service
+    $response = shell_exec(command: "python3 path/to/python_script.py {$eircode}");
+    
+    // Extract JSON from the response
+
+});

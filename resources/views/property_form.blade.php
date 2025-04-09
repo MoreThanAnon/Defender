@@ -6,9 +6,19 @@
         <div class="col-lg-8">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <h3 class="card-title">{{ isset($property) ? 'Edit Property' : 'Create Property' }}</h3>
+                    <h3 class="card-title">{{ isset($property) ? 'Editss Property' : 'Create Property' }}</h3>
+                    @if ($errors->any())
+                        <div class="alert alert-danger">
+                            <ul>
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
                     <form action="{{ isset($property) ? url('/properties/' . $property->id) : url('/properties') }}" method="POST" enctype="multipart/form-data">
                         @csrf
+                        @method('PUT')
                         @if(isset($property))
                             @method('PUT')
                         @endif
@@ -38,11 +48,16 @@
                         </div>
                         <div class="form-group">
                             <label for="berRating">BER Rating</label>
-                            <input type="text" id="berRating" name="berRating" class="form-control" value="{{ $property->berRating ?? '' }}" required>
+                            <input type="text" id="berRating" name="berRating" class="form-control" value="{{ $property->ber_rating ?? '' }}" required>
                         </div>
                         <div class="form-group">
                             <label for="address">Address</label>
                             <textarea id="address" name="address" class="form-control" rows="2" required>{{ $property->address ?? '' }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="eircode">Eircode</label>
+                            <input type="text" value="{{ $property->eircode ?? '' }}" name="eircode" id="eircode" class="form-control" maxlength="20" placeholder="Enter eircode">
+                            <small id="eircodeError" class="text-danger" style="display: none;">Invalid Eircode format. Example: A65 F4E2</small>
                         </div>
                         <div class="form-group">
                             <label for="description">Description</label>
@@ -71,4 +86,15 @@
         </div>
     </div>
 </div>
+<script>
+    document.getElementById('eircode').addEventListener('input', function () {
+        const eircodePattern = /^[A-Za-z0-9]{3}[ ]?[A-Za-z0-9]{4}$/;
+        const eircodeError = document.getElementById('eircodeError');
+        if (this.value && !eircodePattern.test(this.value)) {
+            eircodeError.style.display = 'block';
+        } else {
+            eircodeError.style.display = 'none';
+        }
+    });
+</script>
 @endsection

@@ -12,11 +12,13 @@ class CreatePropertiesTable extends Migration
             $table->string('name');
             $table->decimal('price', 15, 2);
             $table->integer('beds');
+            $table->string('daft_link')->nullable(); // Add the 'daft_link' column
             $table->integer('baths');
             $table->decimal('size', 10, 2);
             $table->string('type', 50);
             $table->string('ber_rating', 10)->nullable();
             $table->string('address');
+            $table->json('images')->nullable(); //
             $table->string('eircode', 10)->nullable();
             $table->text('description')->nullable();
             $table->string('sale_type', 50)->nullable();

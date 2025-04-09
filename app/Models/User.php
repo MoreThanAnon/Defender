@@ -21,9 +21,18 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     protected $fillable = [
         'name',
-        'username',
-        'email',
-        'password',
+        'username', 
+        'email', 
+        'password', 
+        'role', 
+        'real_name', 
+        'eircode', 
+        'address1', 
+        'address2', 
+        'address3', 
+        'city', 
+        'county',
+        'funds', 
     ];
 
     /**
@@ -63,6 +72,12 @@ class User extends Authenticatable implements MustVerifyEmail
     public function users()
     {
         return $this->belongsToMany(User::class);
+    }
+
+    public function userHasSufficientFunds($amount)
+    {
+        // Assuming the User model has a 'balance' attribute
+        return $this->balance >= $amount;
     }
 }
 

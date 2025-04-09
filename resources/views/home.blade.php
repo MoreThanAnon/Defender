@@ -13,10 +13,13 @@
                     <a class="nav-link" href="{{ url('/properties') }}">Properties</a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="{{ route(name: 'customer.edit') }}">My Details</a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="{{ url('/logout') }}">Logout</a>
                 </li>
             </ul>
-            <a href="{{ route('showDepositFunds') }}" class="btn btn-primary ml-auto">Deposit Funds</a>
+            <a class="nav-link" href="{{ route('showDepositFunds') }}" >Deposit Funds</a>
         </div>
     </nav>
     <div class="row">

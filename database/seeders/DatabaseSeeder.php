@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
     {
 
         $this->call(PropertiesTableSeeder::class);
+        $this->call(EircodeAddressesTableSeeder::class);
 
         // Create an admin user
         User::create([
