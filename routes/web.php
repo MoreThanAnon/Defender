@@ -47,8 +47,8 @@ Route::get('/properties/{id}', [PropertiesController::class, 'show'])->name('pro
 Route::get('/properties/{id}/edit', [PropertyController::class, 'edit'])->name('properties.edit');
 Route::put('/properties/{id}', [PropertyController::class, 'update'])->name('properties.update');
 Route::post('/properties/{id}/fund', [PropertyController::class, 'addToFund'])->middleware('auth');
-Route::post('/properties/{id}/bid', [PropertyController::class, 'bid'])->name('properties.bid');
 Route::post('/properties/{id}/bid', [PropertiesController::class, 'placeBid'])->name('properties.placeBid');
+Route::post('/properties/{id}/bid/remove', [PropertiesController::class, 'removeBid'])->name('properties.removeBid');
 
 Route::get('/property/create', [PropertyController::class, 'create'])->name('property.create');
 Route::post('/property/store', [PropertyController::class, 'store'])->name('property.store');

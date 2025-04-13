@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Bid;
+
 class Property extends Model
 {
     use HasFactory;
@@ -17,35 +17,22 @@ class Property extends Model
         'size',
         'type',
         'ber_rating',
+        'eircode',
         'address',
         'description',
+        'latitude',
+        'longitude',
         'sale_type',
         'stamp_duty',
         'features',
         'auctioneer_name',
-        'latitude',
-        'longitude',
-        'images',
         'collective_fund',
+        'fund_goal',
+        'daft_link',
     ];
 
-    protected $casts = [
-        'features' => 'array',
-        'images' => 'array', // Cast images as an array
-    ];
-
-    public function bids()
+    public function images()
     {
-        return $this->hasMany(Bid::class);
-    }
-
-    public function property()
-    {
-        return $this->belongsTo(Property::class);
-    }
-
-    public function user()
-    {
-        return $this->belongsTo(User::class);
+        return $this->hasMany(Image::class);
     }
 }

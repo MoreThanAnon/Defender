@@ -22,12 +22,12 @@
                     @if(isset($images) && count($images) > 0)
                         @foreach($images as $index => $image)
                             <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
-                                <img src="{{ asset('storage/' . $image) }}" class="d-block w-100" alt="Property Image">
+                                <img src="{{ asset('storage/' . $image->path) }}" class="d-block w-100" alt="Property Image">
                             </div>
                         @endforeach
                     @else
                         <div class="carousel-item active">
-                            <img src="{{ asset('images/placeholder.jpg') }}" class="d-block w-100" alt="Placeholder Image">
+                            <img src="{{ asset('storage/default-placeholder.png') }}" class="d-block w-100" alt="No Images Available">
                         </div>
                     @endif
                 </div>
@@ -92,6 +92,20 @@
                             </div>
                             <button type="submit" class="btn btn-primary mt-3">Submit Bid</button>
                         </form>
+                        @if($userBid)
+                            <form action="{{ url('/properties/' . $property->id . '/bid') }}" method="POST">
+                                @csrf
+                                <div class="form-group">
+                                    <label for="bidAmount" class="font-weight-bold">Update Your Bid:</label>
+                                    <input type="number" id="bidAmount" name="bidAmount" class="form-control" required placeholder="Enter new bid amount">
+                                </div>
+                                <button type="submit" class="btn btn-primary mt-3">Update Bid</button>
+                            </form>
+                            <form action="{{ url('/properties/' . $id . '/bid/remove') }}" method="POST" class="mt-3">
+                                @csrf
+                                <button type="submit" class="btn btn-danger">Remove Bid</button>
+                            </form>
+                        @endif
                     @endif
 
                     @if(isset($property) && $property->images)
@@ -100,11 +114,32 @@
                             <div class="row">
                                 @foreach($property->images as $image)
                                     <div class="col-md-3">
-                                        <img src="{{ asset('storage/' . $image) }}" class="img-thumbnail" alt="Property Image">
+                                        <img src="{{ asset('storage/' . $image->path) }}" class="img-thumbnail" alt="Property Image">
                                     </div>
                                 @endforeach
                             </div>
                         </div>
+                    @endif
+
+                    <div class="form-group">
+                        <label for="images">Upload Images</label>
+                        <input type="file" name="images[]" id="images" class="form-control" multiple>
+                        <small class="form-text text-muted">You can upload multiple images.</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Your Bid</h5>
+                    <hr>
+                    @if($userBid)
+                        <p class="card-text">
+                            You placed a bid of <strong>€{{ number_format($userBid->amount, 2) }}</strong> on 
+                            {{ \Carbon\Carbon::parse($userBid->created_at)->format('d M Y, H:i') }}.
+                        </p>
+                    @else
+                        <p class="text-muted">You have not placed a bid on this property yet.</p>
                     @endif
                 </div>
             </div>
@@ -205,7 +240,11 @@
                     <p class="text-muted">Current Fund: €{{ number_format($collectiveFund, 2) }}</p>
                     <p class="text-muted">Goal: €{{ number_format($fundGoal, 2) }}</p>
                     <p class="text-muted">Percentage Raised: {{ round(($collectiveFund / $fundGoal) * 100, 2) }}%</p>
-                    <button type="button" class="btn btn-primary mt-3" data-toggle="modal" data-target="#placeBidModal">Place Your Bid</button>
+                    @if($userBid)
+                        <button type="button" class="btn btn-primary mt-3" data-toggle="modal" data-target="#placeBidModal">Edit Your Bid</button>
+                    @else
+                        <button type="button" class="btn btn-primary mt-3" data-toggle="modal" data-target="#placeBidModal">Place Your Bid</button>
+                    @endif
 
                     @if(auth()->check() && auth()->user()->role === 'user')
                         <p class="text-muted">Your Current Funds: €{{ number_format(auth()->user()->funds, 2) }}</p>
@@ -226,25 +265,55 @@
                 </div>
             </div>
 
-            <!-- Modal for placing a bid -->
+            <!-- Modal for placing or editing a bid -->
             <div class="modal fade" id="placeBidModal" tabindex="-1" role="dialog" aria-labelledby="placeBidModalLabel" aria-hidden="true">
                 <div class="modal-dialog" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="placeBidModalLabel">Place Your Bid</h5>
+                            <h5 class="modal-title" id="placeBidModalLabel">
+                                @if($userBid)
+                                    Edit Your Bid
+                                @else
+                                    Place Your Bid
+                                @endif
+                            </h5>
                             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
                             </button>
                         </div>
+                        
                         <div class="modal-body">
                             <p>Your Available Funds: €{{ number_format(auth()->user()->funds, 2) }}</p>
-                            <form action="{{ url('/properties/' . $id . '/bid') }}" method="POST">
+                            <div id="bid-success-message" class="alert alert-success d-none"></div> <!-- Placeholder for success message -->
+                            <form id="placeBidForm" action="{{ url('/properties/' . $id . '/bid') }}" method="POST">
                                 @csrf
                                 <div class="form-group">
-                                    <label for="bidAmountModal" class="font-weight-bold">Enter Bid Amount:</label>
-                                    <input type="number" id="bidAmountModal" name="bidAmount" class="form-control" required placeholder="Enter your bid amount">
+                                    <label for="bidAmountModal" class="font-weight-bold">
+                                        @if($userBid)
+                                            Update Your Bid Amount:
+                                        @else
+                                            Enter Bid Amount:
+                                        @endif
+                                    </label>
+                                    <input 
+                                        type="number" 
+                                        id="bidAmountModal" 
+                                        name="bidAmount" 
+                                        class="form-control" 
+                                        required 
+                                        placeholder="Enter your bid amount"
+                                        @if($userBid)
+                                            value="{{ $userBid->amount }}" <!-- Pre-fill with the user's current bid -->
+                                        @endif
+                                    >
                                 </div>
-                                <button type="submit" class="btn btn-primary">Submit Bid</button>
+                                <button type="submit" class="btn btn-primary">
+                                    @if($userBid)
+                                        Update Bid
+                                    @else
+                                        Submit Bid
+                                    @endif
+                                </button>
                             </form>
                         </div>
                     </div>
@@ -282,3 +351,48 @@
     text-align: left; /* Ensure text is aligned to the left */
 }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('placeBidForm');
+        const successMessage = document.getElementById('bid-success-message');
+        const availableFundsElement = document.querySelector('.modal-body p'); // Select the "Available Funds" paragraph
+
+        form.addEventListener('submit', function (event) {
+            event.preventDefault(); // Prevent the default form submission
+
+            const formData = new FormData(form);
+            const url = form.action;
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                },
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show the success message dynamically
+                    successMessage.textContent = data.message;
+                    successMessage.classList.remove('d-none');
+
+                    // Update the "Available Funds" dynamically
+                    availableFundsElement.textContent = `Your Available Funds: €${parseFloat(data.updatedFunds).toFixed(2)}`;
+
+                    // Optionally, update the bid amount in the modal
+                    const bidAmountInput = document.getElementById('bidAmountModal');
+                    bidAmountInput.value = formData.get('bidAmount');
+                } else {
+                    // Handle errors (if any)
+                    alert(data.error || 'An error occurred. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
+        });
+    });
+</script>

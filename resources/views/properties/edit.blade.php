@@ -7,7 +7,32 @@
             <div class="card shadow-sm mb-4">
                 <div class="card-body">
                     <h3 class="card-title">Edit Property</h3>
-                    <form action="{{ route('properties.update', $property->id) }}" method="POST">
+
+                    <div id="propertyImagesCarousel" class="carousel slide mb-4" data-ride="carousel">
+                        <div class="carousel-inner">
+                            @if(isset($images) && count($images) > 0)
+                                @foreach($images as $index => $image)
+                                    <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
+                                        <img src="{{ asset('storage/' . $image->path) }}" class="d-block w-100" alt="Property Image">
+                                    </div>
+                                @endforeach
+                            @else
+                                <div class="carousel-item active">
+                                    <img src="{{ asset('storage/default-placeholder.png') }}" class="d-block w-100" alt="No Images Available">
+                                </div>
+                            @endif
+                        </div>
+                        <a class="carousel-control-prev" href="#propertyImagesCarousel" role="button" data-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="sr-only">Previous</span>
+                        </a>
+                        <a class="carousel-control-next" href="#propertyImagesCarousel" role="button" data-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="sr-only">Next</span>
+                        </a>
+                    </div>
+
+                    <form action="{{ route('properties.update', $property->id) }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
 
@@ -89,6 +114,12 @@
                         <div class="form-group">
                             <label for="auctioneerName">Auctioneer Name</label>
                             <input type="text" name="auctioneerName" id="auctioneerName" class="form-control" value="{{ old('auctioneerName', $property->auctioneerName) }}">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="images">Upload Images</label>
+                            <input type="file" name="images[]" id="images" class="form-control" multiple>
+                            <small class="form-text text-muted">You can upload multiple images.</small>
                         </div>
 
                         <button type="submit" class="btn btn-primary">Update Property</button>

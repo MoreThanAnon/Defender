@@ -59,7 +59,6 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         // Assuming the User model has a relationship with roles
         // Adjust the logic based on your database structure
-        
         return $this->roles()->where('name', $role)->exists();
     }
 
@@ -78,6 +77,15 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         // Assuming the User model has a 'balance' attribute
         return $this->balance >= $amount;
+    }
+
+    public function bids()
+    {
+        return $this->hasMany(Bids::class);
+    }
+    public function deposits()
+    {
+        return $this->hasMany(Deposit::class);
     }
 }
 

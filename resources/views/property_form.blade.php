@@ -65,7 +65,8 @@
                         </div>
                         <div class="form-group">
                             <label for="features">Features (comma-separated)</label>
-                            <input type="text" id="features" name="features" class="form-control" value="{{ isset($property) ? implode(',', $property->features) : '' }}">
+                            <input type="text" id="features" name="features" class="form-control" 
+                                   value="{{ isset($property) ? (is_array($property->features) ? implode(',', $property->features) : $property->features) : '' }}">
                         </div>
                         <div class="form-group">
                             <label for="latitude">Latitude</label>

@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Property; // Ensure this line is present
 use App\Models\Bids;
+use App\Models\Image;
 
 class PropertiesController extends Controller
 {
@@ -30,7 +32,19 @@ class PropertiesController extends Controller
     public function show($id)
     {
         $property = Property::findOrFail($id);
+        $userBid = null;
+        $user = auth()->user();
+        $property = Property::with('images')->findOrFail($id);
 
+        if ($user) {
+            $userBid = Bids::where('property_id', $id)
+                ->where('user_id', $user->id)
+                ->first();
+        }
+        $bids = Bids::where('property_id', $id)->get(); // Retrieve all bids for the property
+        $images = Image::where('property_id', $id)->get();
+
+        $collectiveFund = "";
         return view('property', [
             'id' => $property->id,
             'name' => $property->name,
@@ -50,11 +64,15 @@ class PropertiesController extends Controller
             'latitude' => $property->latitude,
             'longitude' => $property->longitude,
             'images' => $property->images,
-            'collectiveFund' => $property->collective_fund, // Pass collective fund
-            'fundGoal' => $property->fund_goal ?? 1, // Pass fund goal
-            'daft_link'=> $property->daft_link,
+            'collectiveFund' => $property->collective_fund,
+            'fundGoal' => $property->fund_goal ?? 1,
+            'daft_link' => $property->daft_link,
+            'userBid' => $userBid,
+            'bids' => $bids,
+            'images' => $images,
         ]);
     }
+
     public function placeBid(Request $request, $id)
     {
         $request->validate([
@@ -64,25 +82,83 @@ class PropertiesController extends Controller
         $property = Property::findOrFail($id);
         $user = auth()->user();
 
-        // Check if the user has enough funds
-        if ($user->funds < $request->bidAmount) {
-            return redirect()->back()->with('error', 'You do not have enough funds to place this bid.');
+        // Check if the user already has a bid for this property
+        $existingBid = Bids::where('property_id', $id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if ($existingBid) {
+            // Refund the previous bid amount to the user's funds
+            $user->funds += $existingBid->amount;
+
+            // Check if the user has enough funds for the new bid
+            if ($user->funds < $request->bidAmount) {
+                return response()->json(['error' => 'You do not have enough funds to place this bid.'], 400);
+            }
+
+            // Deduct the new bid amount from the user's funds
+            $user->funds -= $request->bidAmount;
+            $user->save();
+
+            // Update the existing bid
+            $existingBid->update([
+                'amount' => $request->bidAmount,
+            ]);
+        } else {
+            // Check if the user has enough funds for the new bid
+            if ($user->funds < $request->bidAmount) {
+                return response()->json(['error' => 'You do not have enough funds to place this bid.'], 400);
+            }
+
+            // Deduct the bid amount from the user's funds
+            $user->funds -= $request->bidAmount;
+            $user->save();
+
+            // Create a new bid
+            Bids::create([
+                'property_id' => $property->id,
+                'user_id' => $user->id,
+                'amount' => $request->bidAmount,
+            ]);
+        }
+        if ($existingBid){
+            $message = "Your bid has been updated successfully!";
+        }else{
+            $message = "Your bid has been placed successfully!";
+        }
+        
+        // Return a success response
+        return response()->json([
+            'success' => true,
+            'updatedFunds' => $user->funds, // Include updated funds in the response
+            'message'=>$message
+        ]);
+    }
+
+    public function removeBid($id)
+    {
+        $user = auth()->user();
+
+        // Find the user's bid for the property
+        $existingBid = Bids::where('property_id', $id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if ($existingBid) {
+            // Refund the bid amount to the user's funds
+            $user->funds += $existingBid->amount;
+            $user->funds += $existingBid->amount;
+            $user->save();
+
+            // Delete the bid
+            $existingBid->delete();
+
+            return redirect()->back()->with('success', 'Your bid has been removed successfully.');
         }
 
-        // Deduct the bid amount from the user's funds
-        $user->funds -= $request->bidAmount;
-        $user->save();
-
-        // Create a new bid entry
-        Bids::create([
-            'property_id' => $property->id,
-            'user_id' => $user->id,
-            'amount' => $request->bidAmount,
-            'status' => 'pending', // Default status
-        ]);
-
-        return redirect()->back()->with('success', 'Your bid has been placed successfully!');
+        return redirect()->back()->with('error', 'No bid found to remove.');
     }
+
     /**
      * Store a newly created property in the database.
      *
@@ -144,12 +220,34 @@ class PropertiesController extends Controller
             'description' => 'nullable|string',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
+            'daft_link' => 'nullable|url',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif,jfif|max:2048', // Validate images
         ]);
 
         $property = Property::findOrFail($id);
+
+        // Update property details
         $property->update($validatedData);
 
+        // Handle image uploads
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                // Create a folder path based on the property ID
+                $folderPath = 'properties/' . $id;
+                //C:\wamp644\www\defender\storage\app\public\properties\{id}\filename.jpg
+
+                // Store the image in the folder
+                $path = $image->store($folderPath, 'public'); // Store in 'storage/app/public/properties/{id}'
+
+                // Save the image path in the database
+                Image::create([
+                    'property_id' => $id,
+                    'path' => $path,
+                ]);
+            }
+        }
+
         // Redirect to the property page after updating
-        return redirect()->route('properties.show', $property->id)->with('success', 'Property updated successfully!');
+        return redirect()->route('properties.edit', $property->id)->with('success', 'Property updated successfully!');
     }
 }

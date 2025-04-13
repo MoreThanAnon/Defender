@@ -10,8 +10,8 @@ class CreateChargeLogsTable extends Migration
     {
         Schema::create('charge_logs', function (Blueprint $table) {
             $table->id();
-            $table->string('request');
-            $table->string('response');
+            $table->string('request',500);
+            $table->string('response',500);
             $table->timestamps();
         });
     }

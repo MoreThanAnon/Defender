@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 
-class bids extends Model
+class Bids extends Model
 {
     use HasFactory;
     protected $fillable = [
@@ -15,6 +15,7 @@ class bids extends Model
         'amount',
         'status',
     ];
+
     public function placeBid(Request $request, $id)
     {
         $request->validate([
@@ -43,4 +44,16 @@ class bids extends Model
 
         return redirect()->back()->with('success', 'Your bid has been placed successfully!');
     }
+
+    public function property()
+    {
+        return $this->belongsTo(Property::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+
 }

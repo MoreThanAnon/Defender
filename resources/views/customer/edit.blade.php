@@ -11,6 +11,13 @@
             {{ session('success') }}
         </div>
     @endif
+
+    @if (session('error'))
+        <div class="alert alert-danger">
+            {{ session('error') }}
+        </div>
+    @endif
+
     <form action="{{ route('customer.update') }}" method="POST">
         @csrf
         @method('PUT')
@@ -86,6 +93,31 @@
                 value="{{ old('eircode', auth()->user()->eircode) }}"
             />
         </div>
+        <button type="submit" class="btn btn-primary">Update</button>
+    </form>
+
+    <form action="{{ route('properties.update', $id) }}" method="POST" enctype="multipart/form-data">
+        @csrf
+        @method('PUT')
+
+        <!-- Property fields -->
+        <div class="form-group">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" class="form-control" value="{{ old('name', $property->name) }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="price">Price</label>
+            <input type="number" id="price" name="price" class="form-control" value="{{ old('price', $property->price) }}" required>
+        </div>
+
+        <!-- Image upload -->
+        <div class="form-group">
+            <label for="images">Upload Images</label>
+            <input type="file" id="images" name="images[]" class="form-control" multiple>
+            <small class="form-text text-muted">You can upload multiple images.</small>
+        </div>
+
         <button type="submit" class="btn btn-primary">Update</button>
     </form>
 </div>

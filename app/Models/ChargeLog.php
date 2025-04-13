@@ -10,4 +10,5 @@ class ChargeLog extends Model
     use HasFactory;
 
     protected $fillable = ['request', 'response'];
+
 }

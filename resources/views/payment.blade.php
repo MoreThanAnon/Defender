@@ -1,54 +1,52 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payment Form</title>
-    <script src="https://js.stripe.com/v3/"></script>
-</head>
-<body>
-    <h2>Pay $10.00</h2>
+@extends('layouts.app')
 
-    <form id="payment-form">
-        <div id="card-element">
-            <!-- A Stripe Element will be inserted here. -->
+@section('content')
+<div class="container mt-5">
+    <h1>Deposit Funds</h1>
+
+    <form id="payment-form" action="{{ route('payment.handle') }}" method="POST">
+        @csrf
+
+        <div class="form-group">
+            <label for="amount">Amount to Deposit</label>
+            <input type="number" class="form-control" id="amount" name="amount" required>
         </div>
 
-        <!-- Used to display form errors. -->
-        <div id="card-errors" role="alert"></div>
+        <div class="form-group mt-3">
+            <label for="card-element">Card Details</label>
+            <div id="card-element" class="form-control p-2"></div>
+            <div id="card-errors" class="text-danger mt-2"></div>
+        </div>
 
-        <button type="submit">Pay Now</button>
+        <input type="hidden" name="stripeToken" id="stripeToken">
+
+        <button type="submit" class="btn btn-primary mt-3">Deposit</button>
     </form>
+</div>
+@endsection
 
-    <script>
-        var stripe = Stripe('your-publishable-key-here'); // Your publishable key from Stripe
-        var elements = stripe.elements();
-        var card = elements.create('card');
-        card.mount('#card-element');
+@section('scripts')
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+    const stripe = Stripe("pk_test_..."); // Replace with your public Stripe key
+    const elements = stripe.elements();
+    const card = elements.create("card");
+    card.mount("#card-element");
 
-        // Handle form submission
-        var form = document.getElementById('payment-form');
-        form.addEventListener('submit', function(event) {
-            event.preventDefault();
+    const form = document.getElementById("payment-form");
+    const errorDiv = document.getElementById("card-errors");
 
-            stripe.confirmCardPayment(clientSecret, {
-                payment_method: {
-                    card: card,
-                    billing_details: {
-                        name: 'Customer Name'
-                    }
-                }
-            }).then(function(result) {
-                if (result.error) {
-                    // Show error to your customer
-                    document.getElementById('card-errors').textContent = result.error.message;
-                } else {
-                    // The payment has been processed!
-                    alert("Payment Successful!");
-                    // Optionally, send a confirmation email or update the database
-                }
-            });
-        });
-    </script>
-</body>
-</html>
+    form.addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        const {token, error} = await stripe.createToken(card);
+
+        if (error) {
+            errorDiv.textContent = error.message;
+        } else {
+            document.getElementById("stripeToken").value = token.id;
+            form.submit();
+        }
+    });
+</script>
+@endsection
