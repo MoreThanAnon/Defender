@@ -2,6 +2,8 @@
 
 @section('content')
 <div class="container mt-5">
+    <script src="https://js.stripe.com/v3/"></script>
+
     <h1>Deposit Funds</h1>
 
     <form id="payment-form" action="{{ route('payment.handle') }}" method="POST">

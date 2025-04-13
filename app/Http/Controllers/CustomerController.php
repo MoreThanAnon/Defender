@@ -3,7 +3,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-
+use App\Models\Customer;
 class CustomerController extends Controller
 {
     /**
@@ -12,7 +12,9 @@ class CustomerController extends Controller
     public function edit()
     {
         // Return a view for editing customer information
-        return view('customer.edit');
+        $user = Auth::user();
+        $id = $user->id;
+        return view('customer.edit',['id'=>(int) $id, 'customer'=>$user]);
     }
 
     public function test($eircode){
@@ -37,7 +39,7 @@ class CustomerController extends Controller
 
         // Assuming the authenticated user is the customer
         $user = auth()->user();
-        $user->update($request->only('name', 'email', 'address1', 'address2', 'address3', 'town', 'eircode'));
+        $user->update($request->only('real_name', 'email', 'address1', 'address2', 'address3', 'town', 'eircode'));
 
         return redirect()->route('customer.edit')->with('success', 'Customer information updated successfully.');
     }

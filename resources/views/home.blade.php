@@ -1,27 +1,9 @@
 @extends('layouts.app')
-
 @section('content')
+@include('components.navbar');
+
 <div class="container mt-5">
-    <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
-        <a class="navbar-brand" href="#">Defender</a>
-        <div class="collapse navbar-collapse">
-            <ul class="navbar-nav mr-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url('/home') }}">Home</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url('/properties') }}">Properties</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ route(name: 'customer.edit') }}">My Details</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url('/logout') }}">Logout</a>
-                </li>
-            </ul>
-            <a class="nav-link" href="{{ route('showDepositFunds') }}" >Deposit Funds</a>
-        </div>
-    </nav>
+
     <div class="row">
         <div class="col-md-6">
             <div class="card mb-4">

@@ -13,6 +13,7 @@ use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\CustomerController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
+use App\Http\Controllers\BillingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -58,7 +59,6 @@ Route::post('/payment', [StripeController::class, 'handlePayment'])->name('payme
 
 Route::get('/testpayment', [TestController::class, 'testPayment'])->name('test.payment');
 
-Route::get('/deposit-funds', [HomeController::class, 'showDepositFunds'])->name('showDepositFunds');
 
 Route::get('/test-payment', [TestController::class, 'testPayment']);
 
@@ -75,9 +75,9 @@ Route::get('/moderator', function () {
 
 //Moderator routes
 
-//Admin routes
-
+//Stripe logic, be very fucking careful with this
 Route::post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook']);
+Route::get('/deposit-funds', [StripeController::class, 'showDepositFunds'])->name('showDepositFunds');
 
 Route::middleware('auth')->group(function () {
     Route::get('/customer/edit', [CustomerController::class, 'edit'])->name('customer.edit');
@@ -92,4 +92,16 @@ Route::get('/api/eircode/{eircode}', function ($eircode) {
     
     // Extract JSON from the response
 
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/billing', [StripeController::class, 'billing'])->name('billing');
+    Route::post('/payment-method', [StripeController::class, 'storePaymentMethod'])->name('payment.method.store');
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/deposit-funds', [StripeController::class, 'showDepositFunds'])->name('deposit.funds');
+
+    Route::post('/store-payment-method', [StripeController::class, 'storePaymentMethod'])
+        ->name('stripe.storePaymentMethod');
 });

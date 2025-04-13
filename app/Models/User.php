@@ -9,10 +9,12 @@ use Laravel\Sanctum\HasApiTokens;
 use App\Notifications\CustomVerifyEmail;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\Role;
+use Laravel\Cashier\Billable; // ✅ Add this
 
 class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable;
+    use Billable; // ✅ Add this to enable Cashier/Stripe features
 
     /**
      * The attributes that are mass assignable.
