@@ -26,6 +26,8 @@ class CreatePropertiesTable extends Migration
             $table->string('auctioneer_name', 255)->nullable();
             $table->decimal('latitude', 10, 8)->nullable();
             $table->decimal('longitude', 11, 8)->nullable();
+            $table->integer('status');
+            $table->foreign('status')->references('id')->on('properties_status')->onDelete('cascade');
             $table->timestamps();
         });
     }

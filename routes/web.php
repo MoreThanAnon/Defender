@@ -14,7 +14,7 @@ use App\Http\Controllers\CustomerController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use App\Http\Controllers\BillingController;
-use App\Http\Controllers\BidController;
+use App\Http\Controllers\BidsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -41,8 +41,7 @@ Route::get('/dashboard', [AuthController::class, 'dashboard'])->name('dashboard'
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/home', [HomeController::class, 'index'])->name('home');
-
-
+Route::get('/properties/set-status/{id}/{status}', [PropertyController::class, 'setStatus'])->name('properties.setStatus');
 Route::post('/properties/{id}/bid', [PropertiesController::class, 'placeBid'])->name('properties.placeBid');
 Route::post('/properties/{id}/bid/remove', [PropertiesController::class, 'removeBid'])->name('properties.removeBid');
 Route::get('/properties', [PropertiesController::class, 'index'])->name('properties.index');
@@ -50,6 +49,9 @@ Route::get('/properties/{id}', [PropertyController::class, 'show'])->name('prope
 Route::get('/properties/{id}/edit', [PropertyController::class, 'edit'])->name('properties.edit');
 Route::put('/properties/{id}', [PropertyController::class, 'update'])->name('properties.update');
 Route::post('/properties/{id}/fund', [PropertyController::class, 'addToFund'])->middleware('auth');
+Route::post('/properties/{id}/set-fund-goal', [PropertiesController::class, 'setFundGoal'])->name('properties.setFundGoal');
+
+
 
 Route::get('/property/create', [PropertyController::class, 'create'])->name('property.create');
 Route::post('/property/store', [PropertyController::class, 'store'])->name('property.store');
@@ -106,4 +108,5 @@ Route::middleware(['auth'])->group(function () {
         ->name('stripe.storePaymentMethod');
 });
 
-Route::put('/bids/{bid}', [BidController::class, 'update'])->name('bids.update');
+Route::put('/bids/{bid}', [BidsController::class, 'update'])->name('bids.update');
+Route::put('/bids/{bid}', [BidsController::class, 'update'])->name('bids.update');

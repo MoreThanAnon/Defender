@@ -28,37 +28,41 @@ class PropertyController extends Controller
             return redirect()->back()->withErrors(['error' => 'Insufficient funds to place this bid.']);
         }
 
-        /* Assuming you have a bids table to store bids
-        DB::table('bids')->insert([
-            'property_id' => $id,
-            'user_id' => auth()->id(),
-            'amount' => $request->bidAmount,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-        */
-
         return redirect()->back()->with('success', 'Your bid has been placed successfully.');
     }
 
+    public function setStatus(Request $request)
+    {
+        // Find the property by ID
+        $property = Property::findOrFail($request->id);
+    
+        // Update the status field
+        $property->status = $request->status; // Assuming 'status' is coming from the form/request
+    
+        // Save the changes
+        $property->save();
+    
+        // Optionally, you can redirect or return a response
+        return redirect()->back()->with('success', 'Property status updated successfully.');
+    }
     public function placeBid(Request $request, $id)
     {
         $request->validate([
             'bidAmount' => 'required|numeric|min:1',
         ]);
-
+    
         $property = Property::findOrFail($id);
         $user = auth()->user();
-
+    
         // Check if the user has enough funds
         if ($user->funds < $request->bidAmount) {
-            return redirect()->back()->with('error', 'You do not have enough funds to place this bid.');
+            return response()->json(['success' => false, 'message' => 'You do not have enough funds to place this bid.']);
         }
-
+    
         // Deduct the bid amount from the user's funds
         $user->funds -= $request->bidAmount;
         $user->save();
-
+    
         // Create a new bid entry
         Bid::create([
             'property_id' => $property->id,
@@ -66,8 +70,8 @@ class PropertyController extends Controller
             'amount' => $request->bidAmount,
             'status' => 'pending', // Default status
         ]);
-
-        return redirect()->back()->with('success', 'Your bid has been placed successfully!');
+    
+        return response()->json(['success' => true, 'message' => 'Your bid has been placed successfully!']);
     }
 
 
@@ -82,7 +86,7 @@ class PropertyController extends Controller
         $userBid = null;
         $user = auth()->user();
         $property = Property::with('images')->findOrFail($id);
-
+        
         if ($user) {
             $userBid = Bids::where('property_id', $id)
                 ->where('user_id', $user->id)
@@ -112,13 +116,15 @@ class PropertyController extends Controller
             'latitude' => $property->latitude,
             'longitude' => $property->longitude,
             'collectiveFund' => $this->getCollectiveFunds($id),
-            'fundGoal' => $property->fund_goal ?? 1,
+            'fundGoal' => $property->price ?? 1,
             'daft_link' => $property->daft_link,
             'userBid' => $userBid,
             'bids' => $bids,
             'images' => $images,
+            'property_status'=>$property->status,
         ]);
     }
+
 
     /**
      * Show the form for creating a new property.

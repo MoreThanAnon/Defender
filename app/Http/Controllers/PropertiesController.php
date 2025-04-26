@@ -15,77 +15,65 @@ class PropertiesController extends Controller
      *
      * @return \Illuminate\Contracts\Support\Renderable
      */
-    public function index()
+    public function index(Request $request)
     {
-        $properties = Property::get();
-
+        $query = Property::query();
+    
+        // Only filter to active properties if filter button was pressed
+        if ($request->input('filter') === 'activeBids') {
+            $query->where('status', 1);
+        }
+    
+        // Filter by Eircode region if provided
+        if ($request->filled('eircodeRegion')) {
+            $query->where('eircode', 'LIKE', $request->eircodeRegion . '%');
+        }
+    
+        // Fetch filtered properties
+        $properties = $query->with('images')->get();
+    
         return view('properties', compact('properties'));
     }
-
+    public function setFundGoal(Request $request, $id)
+    {
+        $request->validate([
+            'fundGoal' => 'required|numeric|min:0',
+        ]);
+    
+        $property = Property::findOrFail($id);
+        $property->price = $request->input('fundGoal');
+        $property->save();
+    
+        return redirect()->back()->with('success', 'Fund goal updated successfully.');
+    }
     public function placeBid(Request $request, $id)
     {
         $request->validate([
             'bidAmount' => 'required|numeric|min:1',
         ]);
-
+    
         $property = Property::findOrFail($id);
         $user = auth()->user();
-
-        // Check if the user already has a bid for this property
-        $existingBid = Bids::where('property_id', $id)
-            ->where('user_id', $user->id)
-            ->first();
-
-        if ($existingBid) {
-            // Refund the previous bid amount to the user's funds
-            $user->funds += $existingBid->amount;
-
-            // Check if the user has enough funds for the new bid
-            if ($user->funds < $request->bidAmount) {
-                return response()->json(['error' => 'You do not have enough funds to place this bid.'], 400);
-            }
-
-            // Deduct the new bid amount from the user's funds
-            $user->funds -= $request->bidAmount;
-            $user->save();
-
-            // Update the existing bid
-            $existingBid->update([
-                'amount' => $request->bidAmount,
-            ]);
-        } else {
-            // Check if the user has enough funds for the new bid
-            if ($user->funds < $request->bidAmount) {
-                return response()->json(['error' => 'You do not have enough funds to place this bid.'], 400);
-            }
-
-            // Deduct the bid amount from the user's funds
-            $user->funds -= $request->bidAmount;
-            $user->save();
-
-            // Create a new bid
-            Bids::create([
-                'property_id' => $property->id,
-                'user_id' => $user->id,
-                'amount' => $request->bidAmount,
-            ]);
+    
+        // Check if the user has enough funds
+        if ($user->funds < $request->bidAmount) {
+            return response()->json(['success' => false, 'message' => 'You do not have enough funds to place this bid.']);
         }
-        if ($existingBid){
-            $message = "Your bid has been updated successfully!";
-        }else{
-            $message = "Your bid has been placed successfully!";
-        }
-        
-        // Return a success response
-        return response()->json([
-            'success' => true,
-            'updatedFunds' => $user->funds, // Include updated funds in the response
-            'message'=>$message
+    
+        // Deduct the bid amount from the user's funds
+        $user->funds -= $request->bidAmount;
+        $user->save();
+    
+        // Create a new bid entry
+        Bids::create([
+            'property_id' => $property->id,
+            'user_id' => $user->id,
+            'amount' => $request->bidAmount,
+            'status' => 'pending', // Default status
         ]);
+    
+        return response()->json(['success' => true, 'message' => 'Your bid has been placed successfully!']);
     }
-
- 
-
     /**
      * Store a newly created property in the database.
      *

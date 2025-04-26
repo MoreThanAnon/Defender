@@ -3,6 +3,12 @@
 @section('content')
 <div class="container mt-5">
     @include('components.navbar')
+    @if (session('success'))
+        <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
     <div class="row">
         <div class="col-lg-8">
             <div id="propertyImagesCarousel" class="carousel slide mb-4" data-ride="carousel">
@@ -41,7 +47,7 @@
                     <p class="text-muted">Percentage Raised: {{ round(($collectiveFund / $fundGoal) * 100, 2) }}%</p>
                 </div>
             </div>
-
+            @if ($property_status == 1) 
             <!-- Place Bid Section -->
             <div class="card shadow-sm mb-4">
                 <div class="card-body text-center">
@@ -51,7 +57,7 @@
                         <h5 class="card-title">Place Your Bid</h5>
                     @endif
                     @if($userBid)
-                        <p class="card-text">
+                        <p class="card-text text-success">
                             Your current bid <strong>€{{ number_format($userBid->amount, 2) }}</strong>.
                         </p>
                     @else
@@ -60,14 +66,19 @@
                     @if(auth()->check())
                         <form id="bidForm" action="{{ url('/properties/' . $id . '/bid') }}" method="POST">
                             @csrf
-                            <div class="form-group">
+                            <div class="form-group position-relative">
                                 <label for="bidAmount" class="font-weight-bold">
                                     {{ $bids->isNotEmpty() ? 'Update Bid Amount:' : 'Enter Bid Amount:' }}
                                 </label>
-                                <input type="number" id="bidAmount" name="bidAmount" class="form-control" required placeholder="Enter your bid amount" value="{{ $userBid->amount ?? '' }}">
+                                <div class="input-group">
+                                    <span class="input-group-text">€</span>
+                                    <input type="text" id="bidAmount" name="bidAmount" class="form-control" required placeholder="Enter your bid amount" value="{{ $userBid ? number_format($userBid->amount, 2) : '' }}">
+                                </div>
                             </div>
                             <div class="d-flex justify-content-center mt-3">
-                                <button type="button" onClick="SubmitBid()" name="action" value="submit" class="btn btn-primary me-2">{{ $bids->isNotEmpty() ? 'Update Bid' : 'Enter Bid' }}</button>
+                                <button type="button" onClick="SubmitBid()" name="action" value="submit" class="btn btn-primary me-2">
+                                    {{ $bids->isNotEmpty() ? 'Update Bid' : 'Enter Bid' }}
+                                </button>
                                 @if($userBid)
                                     <button type="button" name="action" value="remove" class="btn btn-danger" onClick="RemoveBid()">Remove Bid</button>
                                 @endif
@@ -81,6 +92,7 @@
                     @endif
                 </div>
             </div>
+        @endif
         </div>
     </div>
 
@@ -106,7 +118,9 @@
         <div class="tab-pane fade show active" id="details" role="tabpanel">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title">Property Details</h5>
+                    <h5 class="card-title">
+                        Property Details (Status: @if ($property_status == 1) Active @else Inactive @endif)
+                    </h5>
                     <hr>
                     <div class="row">
                         <div class="col-md-6">
@@ -175,12 +189,14 @@
                     <div id="map" style="height: 400px;"></div>
                     <script>
                         document.addEventListener('DOMContentLoaded', function () {
-                            const map = L.map('map').setView([{{ $latitude }}, {{ $longitude }}], 13);
-                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                                maxZoom: 19,
-                            }).addTo(map);
-                            L.marker([{{ $latitude }}, {{ $longitude }}]).addTo(map);
+                            //const map = L.map('map').setView([{{ $latitude }}, {{ $longitude }}], 13);
+                           // L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            //    maxZoom: 19,
+                           // }).addTo(map);
+                           // L.marker([{{ $latitude }}, {{ $longitude }}]).addTo(map);
                         });
+
+                        
                     </script>
                 </div>
             </div>
@@ -188,11 +204,114 @@
     </div>
 
     @if(auth()->check() && (auth()->user()->role === 'admin' || auth()->user()->role === 'moderator'))
-        <div class="text-right mb-3">
-            <a href="{{ route('properties.edit', $id) }}" class="btn btn-warning">
+        <div class="d-flex justify-content-end mb-3">
+            <a href="{{ route('properties.edit', $id) }}" class="btn btn-warning me-2">
                 Edit Property
             </a>
+            <a href="#" class="btn btn-warning me-2" data-bs-toggle="modal" data-bs-target="#setFundGoalModal">
+                Set Fund Goal
+            </a>
+            @if ($property_status == 1)
+                <a href="{{ route('properties.setStatus', ['id' => $id, 'status' => 0]) }}" class="btn btn-warning">
+                    Set Property Inactive
+                </a>
+            @else
+                <a href="{{ route('properties.setStatus', ['id' => $id, 'status' => 1]) }}" class="btn btn-warning">
+                    Set Property Active
+                </a>
+            @endif
         </div>
     @endif
 </div>
+
+<!-- Set Fund Goal Modal -->
+<div class="modal fade" id="setFundGoalModal" tabindex="-1" aria-labelledby="setFundGoalModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="setFundGoalForm" action="{{ route('properties.setFundGoal', $id) }}" method="POST">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title" id="setFundGoalModalLabel">Set Fund Goal</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="fundGoal">New Fund Goal (€)</label>
+                        <input type="number" id="fundGoal" name="fundGoal" class="form-control" required placeholder="Enter new fund goal" min="0" step="0.01">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+
+document.addEventListener('DOMContentLoaded', function () {
+    const bidAmountInput = document.getElementById('bidAmount');
+
+    if (bidAmountInput) {
+        bidAmountInput.addEventListener('input', function (e) {
+            // Remove any non-numeric characters except for the decimal point
+            let value = e.target.value.replace(/[^0-9.]/g, '');
+
+            // Split the value into whole and decimal parts
+            const parts = value.split('.');
+            const wholePart = parts[0];
+            const decimalPart = parts[1] ? '.' + parts[1].slice(0, 2) : '';
+
+            // Add commas to the whole part
+            const formattedWholePart = wholePart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+            // Combine the formatted whole part and decimal part
+            e.target.value = formattedWholePart + decimalPart;
+        });
+    }
+});
+function SubmitBid() {
+    var bidForm = $('#bidForm');
+    var bidAmountInput = $('#bidAmount');
+    var bidMessage = $('#bidMessage');
+
+    // Clear any previous messages
+    bidMessage.html('');
+
+    // Validate the bid amount
+    var bidAmount = bidAmountInput.val().replace(/,/g, ''); // Remove commas
+    if (!bidAmount || isNaN(bidAmount) || parseFloat(bidAmount) <= 0) {
+        bidMessage.html('<div class="alert alert-danger">Please enter a valid bid amount.</div>');
+        return;
+    }
+
+    // Append the property ID to the serialized form data
+    var formData = bidForm.serialize() + '&id=' + encodeURIComponent('{{ $id }}');
+
+    // Submit the form via AJAX
+    $.ajax({
+        url: bidForm.attr('action'),
+        method: 'POST',
+        data: formData, // Include the property ID
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function (data) {
+            if (data.success) {
+                bidMessage.html('<div class="alert alert-success">Your bid has been submitted successfully.</div>');
+                setTimeout(function () {
+                    location.reload();
+                }, 2000); // Reload after 2 seconds
+            } else {
+                bidMessage.html('<div class="alert alert-danger">' + (data.message || 'An error occurred while submitting your bid.') + '</div>');
+            }
+        },
+        error: function (xhr, status, error) {
+            console.log(error);
+            bidMessage.html('<div class="alert alert-danger">An error occurred while submitting your bid.</div>');
+        }
+    });
+}
+</script>
 @endsection
