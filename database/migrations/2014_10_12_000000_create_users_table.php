@@ -11,6 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
+        //TODO: Before production, jesus christ do a security review
+        //and make sure to move the address info to another table
         if (!Schema::hasTable('users')) {
             Schema::create('users', function (Blueprint $table) {
                 $table->id();
@@ -19,10 +21,7 @@ return new class extends Migration
                 $table->timestamp('email_verified_at')->nullable();
                 $table->string('password');
                 $table->decimal('balance', 15, 2)->default(0.00);
-                //Guest: Email not even confirmed
-                //User: Email confirmed
-                //Admin: Admin role
-                //moderator: Moderator role
+                $table->string('stripe_customer_id')->nullable();
                 $table->string('role')->default('guest');
                 $table->rememberToken();
                 $table->string('display_name')->nullable();

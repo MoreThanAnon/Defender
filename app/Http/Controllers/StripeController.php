@@ -23,6 +23,40 @@ class StripeController extends Controller
         $intent = auth()->user()->createSetupIntent();
         return view('deposit_funds',['intent' => $intent]); // Ensure this view exists
     }
+
+    public function saveCard(Request $request)
+{
+    Stripe::setApiKey(env('STRIPE_SECRET')); // your Stripe secret key
+
+    $user = auth()->user(); // or however you access your user
+    $paymentMethodId = $request->payment_method;
+
+    // If the user doesn't already have a Stripe customer id, create one
+    if (!$user->stripe_customer_id) {
+        $customer = Customer::create([
+            'email' => $user->email,
+        ]);
+
+        $user->stripe_customer_id = $customer->id;
+        $user->save();
+    }
+
+    // Attach the payment method to the customer
+    $paymentMethod = PaymentMethod::retrieve($paymentMethodId);
+    $paymentMethod->attach([
+        'customer' => $user->stripe_customer_id,
+    ]);
+
+    // Optionally set as default payment method
+    \Stripe\Customer::update($user->stripe_customer_id, [
+        'invoice_settings' => [
+            'default_payment_method' => $paymentMethodId,
+        ],
+    ]);
+
+    return response()->json(['success' => true, 'message' => 'Card saved successfully!']);
+}
+
     public function handlePayment(Request $request)
     {
         $key = "sk_test_REMOVED";

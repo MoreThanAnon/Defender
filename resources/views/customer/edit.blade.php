@@ -20,22 +20,7 @@
         @csrf
         @method('PUT')
 
-        @if($images && count($images))
-        <div class="form-group mt-4">
-            <label>Current Images</label>
-            <div class="d-flex flex-wrap gap-2">
-                @foreach($customer->images as $index => $image)
-                    <div class="position-relative" style="width: 150px;">
-                        <img src="{{ asset('storage/' . $image) }}" class="img-thumbnail" />
-                        <label class="text-danger" style="position: absolute; top: 5px; right: 10px; cursor: pointer;">
-                            <input type="checkbox" name="delete_images[]" value="{{ $image }}" />
-                            ✖
-                        </label>
-                    </div>
-                @endforeach
-            </div>
-        </div>
-    @endif
+ 
     
     <div class="form-group mt-4">
         <label for="images">Upload New Images</label>
