@@ -86,53 +86,10 @@ class StripeController extends Controller
         $user->save();
     }
 
-    public function testhandlePayment($amount, $currency, $source, $userId)
-    {
-        $key = "sk_test_REMOVED";
-        Stripe::setApiKey($key);;
-
-        $chargeRequest = [
-            'amount' => $amount * 100,
-            'currency' => $currency,
-            'source' => $source,
-            'description' => 'Payment from user ID ' . $userId,
-        ];
-
-        try {
-            $charge = Charge::create($chargeRequest);
-
-            $chargeResponse = [
-                'status' => $charge->status,
-                'id' => $charge->id,
-                'amount' => $charge->amount,
-                'currency' => $charge->currency,
-                'description' => $charge->description,
-            ];
-
-            ChargeLog::create([
-                'request' => json_encode($chargeRequest),
-                'response' => json_encode($chargeResponse),
-            ]);
-
-            if ($charge->status === 'succeeded') {
-                $user = User::findOrFail($userId);
-                $this->updateDeposit($user, $amount);
-                return response()->json(['success_message' => 'Payment successful!']);
-            } else {
-                return response()->json(['error_message' => 'Error! Payment failed.'], 500);
-            }
-
-        } catch (\Exception $e) {
-            ChargeLog::create([
-                'request' => json_encode($chargeRequest),
-                'response' => json_encode(['error_message' => $e->getMessage()]),
-            ]);
-
-            return response()->json(['error_message' => 'Error! ' . $e->getMessage()], 500);
-        }
+    public function widthdrawl(Request $request){
+        //Get user
+        //Get
     }
-
-
     public function storePaymentMethod(Request $request)
     {
         $user = auth()->user();

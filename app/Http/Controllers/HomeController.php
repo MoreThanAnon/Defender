@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Deposit;
 use Illuminate\Http\Request;
-
+use App\Models\Deposits;
+use App\Models\withdrawal;
+use App\Models\User;
+use App\Models\Bids;
 class HomeController extends Controller
 {
     /**
@@ -23,28 +27,36 @@ class HomeController extends Controller
      */
     public function index()
     {
+        $auth = auth()->user()->id;
+        $availableCash = User::where('id', operator: $auth)->value('funds');
+        $totalDeposits = Deposit::where('user_id', operator: $auth)->sum('net_amount');
+        $totalWithdrawals = withdrawal::where('user_id', operator: $auth)->sum('net_amount');
         // Fetch data from the database
-        $totalDeposits = 800.00;
-        $totalWithdrawals = 999.52;
-        $loanSupport = 32;
-        $totalInvested = 2100.00;
+        //MVP for now
+     // Fetch total invested from bids where status is 'complete'
+        $totalInvested = Bids::where('user_id', $auth)
+        ->where('status', 'complete')
+        ->sum('amount');
         $principalRepaid = 2057.96;
         $interestEarned = 354.74;
-        $availableCash = 74.58;
-        $liveInvestments = 0.00;
         $investorFee = 38.57;
+
+        //Add these in future
+        $loanSupport = 0;
+        $liveInvestments = 0.00;
         $balanceFee = 0.03;
-        $remainingBalance = 74.58;
         $principalOutstanding = 0.00;
-        $repayingLoansInvested = 0.00;
-        $repayingLoansRepaid = 0.00;
-        $repayingLoansEarned = 0.00;
+        //Remove in general:
         $finishedLoansInvested = 2000.00;
-        $finishedLoansRepaid = 2000.00;
         $finishedLoansEarned = 338.68;
         $badDebtLoansInvested = 100.00;
         $badDebtLoansRepaid = 57.96;
         $badDebtLoansEarned = 16.06;
+        $finishedLoansRepaid = 2000.00;
+        $repayingLoansEarned = 0.00;
+        $repayingLoansRepaid = 0.00;
+        $repayingLoansInvested = 0.00;
+        $remainingBalance = 74.58;//Wtf is this
 
         $recentActivities = [
             'Monthly repayment of €4.32 by Dundalk Bay Sea Foods Limited (8 months ago)',

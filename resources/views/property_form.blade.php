@@ -6,7 +6,7 @@
         <div class="col-lg-8">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <h3 class="card-title">{{ isset($property) ? 'Editss Property' : 'Create Property' }}</h3>
+                    <h3 class="card-title">{{ isset($property) ? 'Edit Property' : 'Create Property' }}</h3>
                     @if ($errors->any())
                         <div class="alert alert-danger">
                             <ul>
@@ -76,10 +76,27 @@
                             <label for="longitude">Longitude</label>
                             <input type="text" id="longitude" name="longitude" class="form-control" value="{{ $property->longitude ?? '' }}" required>
                         </div>
-                        <div class="form-group">
-                            <label for="images">Property Images</label>
-                            <input type="file" id="images" name="images[]" class="form-control" multiple>
+                        @if($images && count($images))
+                        <div class="form-group mt-4">
+                            <label>Current Images</label>
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach($images as $image)
+                                    <div class="position-relative" style="width: 150px;">
+                                        <img src="{{ asset('storage/' . $image->path) }}" class="img-thumbnail" />
+                                        <label class="text-danger" style="position: absolute; top: 5px; right: 10px; cursor: pointer;">
+                                            <input type="checkbox" name="delete_images[]" value="{{ $image->path }}" />
+                                            ✖
+                                        </label>
+                                    </div>
+                                @endforeach
+                            </div>
                         </div>
+                    @endif
+                    
+                    <div class="form-group mt-4">
+                        <label for="images">Upload New Images</label>
+                        <input type="file" name="images[]" id="images" class="form-control" multiple>
+                    </div>
                         <button type="submit" class="btn btn-primary">{{ isset($property) ? 'Update Property' : 'Create Property' }}</button>
                     </form>
                 </div>
@@ -98,4 +115,5 @@
         }
     });
 </script>
+
 @endsection

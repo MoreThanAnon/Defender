@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -9,13 +8,10 @@ class Image extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'property_id',
-        'path',
-    ];
+    protected $fillable = ['property_id', 'path'];
 
     public function property()
     {
-        return $this->belongsTo(Property::class);
+        return $this->belongsTo(Property::class, 'property_id', 'id');
     }
 }

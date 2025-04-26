@@ -14,6 +14,7 @@ use App\Http\Controllers\CustomerController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use App\Http\Controllers\BillingController;
+use App\Http\Controllers\BidController;
 
 /*
 |--------------------------------------------------------------------------
@@ -42,14 +43,13 @@ Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/home', [HomeController::class, 'index'])->name('home');
 
 
-
+Route::post('/properties/{id}/bid', [PropertiesController::class, 'placeBid'])->name('properties.placeBid');
+Route::post('/properties/{id}/bid/remove', [PropertiesController::class, 'removeBid'])->name('properties.removeBid');
 Route::get('/properties', [PropertiesController::class, 'index'])->name('properties.index');
-Route::get('/properties/{id}', [PropertiesController::class, 'show'])->name('property.show');
+Route::get('/properties/{id}', [PropertyController::class, 'show'])->name('property.show');
 Route::get('/properties/{id}/edit', [PropertyController::class, 'edit'])->name('properties.edit');
 Route::put('/properties/{id}', [PropertyController::class, 'update'])->name('properties.update');
 Route::post('/properties/{id}/fund', [PropertyController::class, 'addToFund'])->middleware('auth');
-Route::post('/properties/{id}/bid', [PropertiesController::class, 'placeBid'])->name('properties.placeBid');
-Route::post('/properties/{id}/bid/remove', [PropertiesController::class, 'removeBid'])->name('properties.removeBid');
 
 Route::get('/property/create', [PropertyController::class, 'create'])->name('property.create');
 Route::post('/property/store', [PropertyController::class, 'store'])->name('property.store');
@@ -105,3 +105,5 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/store-payment-method', [StripeController::class, 'storePaymentMethod'])
         ->name('stripe.storePaymentMethod');
 });
+
+Route::put('/bids/{bid}', [BidController::class, 'update'])->name('bids.update');

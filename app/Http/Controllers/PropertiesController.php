@@ -17,60 +17,9 @@ class PropertiesController extends Controller
      */
     public function index()
     {
-        // Fetch properties data from the database
-        $properties = Property::all();
+        $properties = Property::get();
 
         return view('properties', compact('properties'));
-    }
-
-    /**
-     * Show the detailed view of a property.
-     *
-     * @param int $id
-     * @return \Illuminate\Contracts\Support\Renderable
-     */
-    public function show($id)
-    {
-        $property = Property::findOrFail($id);
-        $userBid = null;
-        $user = auth()->user();
-        $property = Property::with('images')->findOrFail($id);
-
-        if ($user) {
-            $userBid = Bids::where('property_id', $id)
-                ->where('user_id', $user->id)
-                ->first();
-        }
-        $bids = Bids::where('property_id', $id)->get(); // Retrieve all bids for the property
-        $images = Image::where('property_id', $id)->get();
-
-        $collectiveFund = "";
-        return view('property', [
-            'id' => $property->id,
-            'name' => $property->name,
-            'price' => $property->price,
-            'beds' => $property->beds,
-            'baths' => $property->baths,
-            'size' => $property->size,
-            'type' => $property->type,
-            'ber_rating' => $property->ber_rating,
-            'eircode' => $property->eircode,
-            'address' => $property->address,
-            'description' => $property->description,
-            'saleType' => $property->sale_type,
-            'stampDuty' => $property->stamp_duty,
-            'features' => $property->features,
-            'auctioneerName' => $property->auctioneer_name,
-            'latitude' => $property->latitude,
-            'longitude' => $property->longitude,
-            'images' => $property->images,
-            'collectiveFund' => $property->collective_fund,
-            'fundGoal' => $property->fund_goal ?? 1,
-            'daft_link' => $property->daft_link,
-            'userBid' => $userBid,
-            'bids' => $bids,
-            'images' => $images,
-        ]);
     }
 
     public function placeBid(Request $request, $id)
@@ -135,29 +84,7 @@ class PropertiesController extends Controller
         ]);
     }
 
-    public function removeBid($id)
-    {
-        $user = auth()->user();
-
-        // Find the user's bid for the property
-        $existingBid = Bids::where('property_id', $id)
-            ->where('user_id', $user->id)
-            ->first();
-
-        if ($existingBid) {
-            // Refund the bid amount to the user's funds
-            $user->funds += $existingBid->amount;
-            $user->funds += $existingBid->amount;
-            $user->save();
-
-            // Delete the bid
-            $existingBid->delete();
-
-            return redirect()->back()->with('success', 'Your bid has been removed successfully.');
-        }
-
-        return redirect()->back()->with('error', 'No bid found to remove.');
-    }
+ 
 
     /**
      * Store a newly created property in the database.
@@ -198,7 +125,36 @@ class PropertiesController extends Controller
             'property' => $property
         ], 201);
     }
-
+    public function removeBid($id)
+    {
+        $user = auth()->user();
+        // Find the user's bid for the property
+        $existingBid = Bids::where('property_id', $id)
+            ->where('user_id', $user->id)
+            ->first();
+    
+        if ($existingBid) {
+            // Refund the bid amount to the user's funds
+            $user->funds += $existingBid->amount;
+            $user->save();
+    
+            // Delete the bid
+            $existingBid->delete();
+    
+            // Return a JSON response with a success message
+            return response()->json([
+                'success' => true,
+                'message' => 'Your bid has been removed successfully.',
+                'updatedFunds' => $user->funds // Optionally, return updated funds for UI
+            ]);
+        }
+    
+        // Return a JSON response if no bid found to remove
+        return response()->json([
+            'success' => false,
+            'message' => 'No bid found to remove.'
+        ], 404); // Return 404 for not found case
+    }
     /**
      * Update the specified property in the database.
      *

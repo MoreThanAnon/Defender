@@ -20,18 +20,27 @@
         @csrf
         @method('PUT')
 
-        <div class="form-group">
-            <label for="name">Name</label>
-            <input
-                type="text"
-                id="name"
-                name="name"
-                class="form-control"
-                value="{{ old('real_name', $customer->real_name) }}"
-                required
-            />
+        @if($images && count($images))
+        <div class="form-group mt-4">
+            <label>Current Images</label>
+            <div class="d-flex flex-wrap gap-2">
+                @foreach($customer->images as $index => $image)
+                    <div class="position-relative" style="width: 150px;">
+                        <img src="{{ asset('storage/' . $image) }}" class="img-thumbnail" />
+                        <label class="text-danger" style="position: absolute; top: 5px; right: 10px; cursor: pointer;">
+                            <input type="checkbox" name="delete_images[]" value="{{ $image }}" />
+                            ✖
+                        </label>
+                    </div>
+                @endforeach
+            </div>
         </div>
-
+    @endif
+    
+    <div class="form-group mt-4">
+        <label for="images">Upload New Images</label>
+        <input type="file" name="images[]" id="images" class="form-control" multiple>
+    </div>
         <div class="form-group">
             <label for="email">Email</label>
             <input
@@ -102,4 +111,6 @@
         <button type="submit" class="btn btn-primary mt-3">Update</button>
     </form>
 </div>
+
+
 @endsection

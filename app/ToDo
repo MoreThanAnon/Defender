@@ -8,10 +8,20 @@
 Small Stuff
 [] Get message after registering that it went well and now they can login
 
-[] Add a front end bidding system so people can put money down to buy properties
+[x] Add a front end bidding system so people can put money down to buy properties
 [] Add the system to show people who want to rent the property and their detail (check what's legal and what's not)
 [] Back end system that only moderators can use
+[] Add a withdrawl system
+[] Add the deposit system with save card function
+[] Update the home controller with real values and check everything is ok
 
+Copy this:
+https://hotelierco.com/
+Pages
+
+- Moderator page
+    [] Add new property
+    [] 
 =======Permissions======
 
 Add permissions - Spatie Laravel Permission:

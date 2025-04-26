@@ -18,7 +18,6 @@ class CreatePropertiesTable extends Migration
             $table->string('type', 50);
             $table->string('ber_rating', 10)->nullable();
             $table->string('address');
-            $table->json('images')->nullable(); //
             $table->string('eircode', 10)->nullable();
             $table->text('description')->nullable();
             $table->string('sale_type', 50)->nullable();

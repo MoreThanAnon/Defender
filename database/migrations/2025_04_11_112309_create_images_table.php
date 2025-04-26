@@ -13,7 +13,6 @@ class CreateImagesTable extends Migration
             $table->unsignedBigInteger('property_id'); // Reference to the property
             $table->string('path'); // Path to the image file
             $table->timestamps();
-
             // Foreign key constraint
             $table->foreign('property_id')->references('id')->on('properties')->onDelete('cascade');
         });

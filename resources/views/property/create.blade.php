@@ -12,7 +12,7 @@
             </ul>
         </div>
     @endif
-    <form action="{{ route('property.store') }}" method="POST">
+    <form action="{{ route('property.store') }}" method="POST" enctype="multipart/form-data">
         @csrf
         <div class="form-group">
             <label for="name">Property Name</label>
@@ -51,6 +51,10 @@
             <textarea name="description" id="description" class="form-control">{{ old('description') }}</textarea>
         </div>
         <div class="form-group">
+            <label for="eircode">Eircode</label>
+            <input type="text" name="eircode" id="eircode" class="form-control" value="{{ old('eircode') }}">
+        </div>
+        <div class="form-group">
             <label for="sale_type">Sale Type</label>
             <input type="text" name="sale_type" id="sale_type" class="form-control" value="{{ old('sale_type') }}" required>
         </div>
@@ -60,7 +64,8 @@
         </div>
         <div class="form-group">
             <label for="features">Features</label>
-            <textarea name="features[]" id="features" class="form-control">{{ old('features.0') }}</textarea>
+            <textarea name="features" id="features" class="form-control">{{ is_array(old('features')) ? implode(', ', old('features')) : old('features') }}</textarea>
+            <small class="form-text text-muted">Enter features as a comma-separated list (e.g., "Feature 1, Feature 2").</small>
         </div>
         <div class="form-group">
             <label for="auctioneer_name">Auctioneer Name</label>
@@ -75,8 +80,16 @@
             <input type="number" step="any" name="longitude" id="longitude" class="form-control" value="{{ old('longitude') }}">
         </div>
         <div class="form-group">
-            <label for="images">Images</label>
-            <input type="file" name="images[]" id="images" class="form-control" multiple>
+            <label for="images">Upload Images</label>
+            <input 
+                type="file" 
+                name="images[]" 
+                id="images" 
+                class="form-control" 
+                accept="image/jpeg, image/png, image/jpg, image/gif" 
+                multiple
+            >
+            <small class="form-text text-muted">Only JPEG, PNG, JPG, and GIF files are allowed.</small>
         </div>
         <button type="submit" class="btn btn-primary">Add Property</button>
     </form>

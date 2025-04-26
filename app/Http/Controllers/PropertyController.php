@@ -7,7 +7,7 @@ use App\Models\Bid;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Image;
-
+use App\Models\Bids;
 class PropertyController extends Controller
 {
 
@@ -70,45 +70,53 @@ class PropertyController extends Controller
         return redirect()->back()->with('success', 'Your bid has been placed successfully!');
     }
 
-    public function removeBid($id)
-    {
-        $user = auth()->user();
 
-        // Find the user's bid for the property
-        $existingBid = Bids::where('property_id', $id)
-            ->where('user_id', $user->id)
-            ->first();
-
-        if ($existingBid) {
-            // Refund the bid amount to the user's funds
-            $user->funds += $existingBid->amount;
-            $user->save();
-
-            // Delete the bid
-            $existingBid->delete();
-
-            return redirect()->back()->with('success', 'Your bid has been removed successfully.');
-        }
-
-        return redirect()->back()->with('error', 'No bid found to remove.');
-    }
-
+    /**
+     * Show the detailed view of a property.
+     *
+     * @param int $id
+     * @return \Illuminate\Contracts\Support\Renderable
+     */
     public function show($id)
     {
-        
-        $property = Property::findOrFail($id);
         $userBid = null;
         $user = auth()->user();
+        $property = Property::with('images')->findOrFail($id);
 
         if ($user) {
             $userBid = Bids::where('property_id', $id)
                 ->where('user_id', $user->id)
-                ->first(); // Retrieve the user's bid
+                ->first();
         }
+        
+        $bids = Bids::where('property_id', $id)->get(); // Retrieve all bids for the property
+        $images = Image::where('property_id', $id)->get();
 
+        $collectiveFund = "";
         return view('property', [
-            'property' => $property,
-            'userBid' => $userBid, // Pass the user's bid to the view
+            'id' => $property->id,
+            'name' => $property->name,
+            'price' => $property->price,
+            'beds' => $property->beds,
+            'baths' => $property->baths,
+            'size' => $property->size,
+            'type' => $property->type,
+            'ber_rating' => $property->ber_rating,
+            'eircode' => $property->eircode,
+            'address' => $property->address,
+            'description' => $property->description,
+            'saleType' => $property->sale_type,
+            'stampDuty' => $property->stamp_duty,
+            'features' => $property->features,
+            'auctioneerName' => $property->auctioneer_name,
+            'latitude' => $property->latitude,
+            'longitude' => $property->longitude,
+            'collectiveFund' => $this->getCollectiveFunds($id),
+            'fundGoal' => $property->fund_goal ?? 1,
+            'daft_link' => $property->daft_link,
+            'userBid' => $userBid,
+            'bids' => $bids,
+            'images' => $images,
         ]);
     }
 
@@ -122,6 +130,11 @@ class PropertyController extends Controller
         return view('property.create');
     }
 
+    public function getCollectiveFunds($id){
+        $fundings = Bids::where('property_id', $id)->sum('amount');
+        return $fundings;
+    }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -131,53 +144,54 @@ class PropertyController extends Controller
             'baths' => 'required|integer',
             'size' => 'required|numeric',
             'type' => 'required|string|max:255',
-            'berRating' => 'required|string|max:255',
+            'ber_rating' => 'required|string|max:255',
             'address' => 'required|string',
             'eircode' => 'required|string|max:20',
             'description' => 'required|string',
             'features' => 'nullable|string',
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
-            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Validate each image
+            'images' => 'nullable|array',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Validate each file
         ]);
-
+    
         $propertyData = $request->except('images');
-
-        // Handle features as an array
-        if ($request->has('features')) {
-            $propertyData['features'] = explode(',', $request->features);
+        
+        if ($request->filled('features')) {
+            $propertyData['features'] = json_encode(explode(',', $request->features));
         }
+        $uploadedImages = [];
 
-        // Handle image uploads
         if ($request->hasFile('images')) {
-            $uploadedImages = [];
             foreach ($request->file('images') as $image) {
-                $path = $image->store('properties', 'public'); // Store in 'storage/app/public/properties'
-
-                // Check if the file was actually saved
-                if (!Storage::disk('public')->exists($path)) {
-                    return redirect()->back()->with('error', 'Failed to save the image: ' . $image->getClientOriginalName());
-                }
-
+                $path = $image->store('properties', 'public');
                 $uploadedImages[] = $path;
             }
-            $propertyData['images'] = $uploadedImages; // Save image paths as an array
+            $propertyData['images'] = $uploadedImages;
         }
-
         $property = Property::create($propertyData);
-
+        foreach($uploadedImages as $imagePath) {
+            Image::create([
+                'property_id' => $property->id,
+                'path' => $imagePath,
+            ]);
+        }
         return redirect()->route('properties.index')->with('success', 'Property created successfully!');
-    }
+    
+}
+    
 
     public function edit($id)
     {
         $property = Property::find($id);
-
+        $images = Image::where('property_id', $id)->get();
         if (!$property) {
             abort(404, 'Property not found');
         }
-
-        return view('property_form', compact('property'));
+        return view('property_form', [
+            'property' => $property,
+            'images' => $images,
+        ]);
     }
 
     public function update(Request $request, $id)
@@ -195,32 +209,37 @@ class PropertyController extends Controller
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
             'daft_link' => 'nullable|url',
-            'images.*' => 'image|mimes:jpeg,png,jpg,gif,jfif|max:2048', // Validate images
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif,jfif|max:2048',
         ]);
-
+    
         $property = Property::findOrFail($id);
-
-        // Update property details
         $property->update($validatedData);
-
-        // Handle image uploads
+        if ($request->has('delete_images')) {
+            foreach ($request->input('delete_images') as $imagePath) {
+                // Delete the image file from storage
+                if (Storage::disk('public')->exists($imagePath)) {
+                    Storage::disk('public')->delete($imagePath);
+                }
+    
+                // Remove from DB (assuming 'path' column is unique enough)
+                Image::where('property_id', $id)
+                    ->where('path', $imagePath)
+                    ->delete();
+            }
+        }
+    
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
-                // Create a folder path based on the property ID
                 $folderPath = 'properties/' . $id;
-
-                // Store the image in the folder
-                $path = $image->store($folderPath, 'public'); // Store in 'storage/app/public/properties/{id}'
-
-                // Save the image path in the database
+                $path = $image->store($folderPath, 'public');
+    
                 Image::create([
                     'property_id' => $id,
                     'path' => $path,
                 ]);
             }
         }
-
-        // Redirect to the property page after updating
+    
         return redirect()->route('property.show', $property->id)->with('success', 'Property updated successfully!');
     }
 

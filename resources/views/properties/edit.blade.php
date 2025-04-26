@@ -150,5 +150,15 @@
                 });
         }
     });
+
+    
+</script>
+<script>
+    // Send PHP data to JavaScript and log it
+    const customerData = @json($customer);
+    const imagesData = @json($images);
+    alert("test");
+    console.log('Customer:', customerData);
+    console.log('Images:', imagesData);
 </script>
 @endsection
