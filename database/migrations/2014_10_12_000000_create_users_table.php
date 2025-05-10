@@ -32,6 +32,8 @@ return new class extends Migration
                 $table->string('address3')->nullable();
                 $table->string('city')->nullable();
                 $table->string('county')->nullable();
+                $table->string('pm_last_four', 4)->nullable();
+                $table->string('pm_type')->nullable();
                 $table->timestamps();
             });
         }

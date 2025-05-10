@@ -271,6 +271,31 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 });
+
+function RemoveBid() {
+    const bidMessage = $('#bidMessage');
+
+    $.ajax({
+    url: "{{ route('properties.removeBid', ['id' => $id]) }}", // Laravel will generate /properties/1/bid/remove
+        method: 'POST',
+        data: {
+            _token: '{{ csrf_token() }}'
+        },
+        success: function (data) {
+            if (data.success) {
+                bidMessage.html('<div class="alert alert-success">Your bid was removed successfully.</div>');
+                setTimeout(function () {
+                    location.reload();
+                }, 2000);
+            } else {
+                bidMessage.html('<div class="alert alert-danger">' + (data.message || 'Failed to remove bid.') + '</div>');
+            }
+        },
+        error: function (xhr, status, error) {
+            bidMessage.html('<div class="alert alert-danger">An error occurred while removing your bid.</div>');
+        }
+    });
+}
 function SubmitBid() {
     var bidForm = $('#bidForm');
     var bidAmountInput = $('#bidAmount');
@@ -287,6 +312,7 @@ function SubmitBid() {
     }
 
     // Append the property ID to the serialized form data
+    bidAmountInput.val(bidAmount);
     var formData = bidForm.serialize() + '&id=' + encodeURIComponent('{{ $id }}');
 
     // Submit the form via AJAX

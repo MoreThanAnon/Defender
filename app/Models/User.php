@@ -35,6 +35,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'city', 
         'county',
         'funds', 
+        'pm_type',
+        'pm_last_four',
+        'balance'
     ];
 
     /**

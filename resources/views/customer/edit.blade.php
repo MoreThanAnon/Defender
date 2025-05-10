@@ -19,13 +19,6 @@
     <form action="{{ route('customer.update') }}" method="POST">
         @csrf
         @method('PUT')
-
- 
-    
-    <div class="form-group mt-4">
-        <label for="images">Upload New Images</label>
-        <input type="file" name="images[]" id="images" class="form-control" multiple>
-    </div>
         <div class="form-group">
             <label for="email">Email</label>
             <input

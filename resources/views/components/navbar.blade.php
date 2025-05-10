@@ -1,5 +1,5 @@
 @php
-    $current = Request::path()
+    $current = Request::path();
 @endphp
 
 <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
@@ -21,23 +21,34 @@
                     My Details
                 </a>
             </li>
+
+            <li class="nav-item">
+                <a class="nav-link {{ Request::routeIs('card.add') ? 'text-primary fw-bold' : '' }}" href="{{ route('card.add') }}">
+                    Add Card
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link {{ Request::routeIs('stripe.deposit') ? 'text-primary fw-bold' : '' }}" href="{{ route('stripe.deposit') }}">
+                    Deposit Funds
+                </a>
+            </li>
+
             @auth
-            <li class="nav-item">
-                <a class="nav-link {{ Request::is('logout') ? 'text-primary fw-bold' : '' }}" href="{{ url('/logout') }}">
-                    Logout
-                </a>
-            </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ Request::is('logout') ? 'text-primary fw-bold' : '' }}" href="{{ url('/logout') }}">
+                        Logout
+                    </a>
+                </li>
             @endauth
+
             @guest
-            <li class="nav-item">
-                <a class="nav-link {{ Request::is('Login') ? 'text-primary fw-bold' : '' }}" href="{{ route('login') }}">
-                    Login
-                </a>
-            </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ Request::routeIs('login') ? 'text-primary fw-bold' : '' }}" href="{{ route('login') }}">
+                        Login
+                    </a>
+                </li>
             @endguest
         </ul>
-        <a class="nav-link {{ Request::routeIs('deposit.funds') ? 'text-primary fw-bold' : '' }}" href="{{ route('deposit.funds') }}">
-            Deposit Funds
-        </a>
     </div>
 </nav>

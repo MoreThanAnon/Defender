@@ -4,8 +4,15 @@
 - SMTP server and mail to recover password (reset it)
 - SMTP server to send a secure way to confirm email is right
 [] For the love of god put in some unit tests
+[] Bidding system got fucked:
+1:123 Uncaught ReferenceError: RemoveBid is not defined
+    at HTMLButtonElement.onclick (1:123:165)
+onclick	@	1:123
 
+update the bid is fucked again, DO THIS ON THE RIGHT BRACH, YOU KEEP FUCKING UP CODE, UNIT TESTS WOULD HELP
 Small Stuff
+http://127.0.0.1/defender/public/customer/edit
+when changing email reconfirm if it exists, same with address and 
 [] Get message after registering that it went well and now they can login
 
 [x] Add a front end bidding system so people can put money down to buy properties

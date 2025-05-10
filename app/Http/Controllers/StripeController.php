@@ -4,182 +4,196 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Stripe\Stripe;
-use Stripe\Charge;
+use Stripe\PaymentIntent;
+use Stripe\SetupIntent;
 use App\Models\ChargeLog;
 use App\Models\User;
 use App\Models\Deposit;
 use Illuminate\Support\Facades\Auth;
+use Stripe\StripeClient;
+use Illuminate\Support\Facades\Log;
 
 class StripeController extends Controller
 {
-    public function showPaymentForm()
+    public function __construct()
     {
-        return view('payment');
+        Stripe::setApiKey(env('STRIPE_SECRET')); // Ensure STRIPE_SECRET is set in your .env file
     }
-    public function showDepositFunds()
+
+    public function getCardDetails(Request $request)
+    {
+        $user = auth()->user();
+        $default = $user->defaultPaymentMethod();
+        //file_put_contents(__DIR__ . '/log.txt', json_encode($default->card));die;
+        if (!$user->stripe_id) {
+            return response()->json(['error' => 'No default card found'], 404);
+        }
+
+        return response()->json([
+            'success'=> true,
+            'brand' => $default->card->brand ?? '',
+            'last4' => $default->card->last4 ?? '',
+            'exp_month' => $default->card->exp_month ?? '',
+            'exp_year' => $default->card->exp_year ?? '',
+        ]); 
+    }
+
+    
+    public function showAddCardForm()
+    {
+        $intent = auth()->user()->createSetupIntent();
+        return view('stripe.add_card', ['intent' => $intent]);
+    }
+
+    public function storeCard(Request $request)
+    {
+        $request->validate([
+            'payment_method' => 'required|string',
+        ]);
+    
+        $user = auth()->user();
+    
+        try {
+            // Attach the payment method and set it as default
+            $user->addPaymentMethod($request->payment_method);
+            $user->updateDefaultPaymentMethod($request->payment_method);
+    
+            return redirect()->route('card.add')->with('success', 'Card saved successfully!');
+        } catch (\Exception $e) {
+            return redirect()->route('card.add')->with('error', 'Failed to save card: ' . $e->getMessage());
+        }
+    }
+
+    public function showDepositForm()
     {
         $user = auth()->user();
 
-        $intent = auth()->user()->createSetupIntent();
-        return view('deposit_funds',['intent' => $intent]); // Ensure this view exists
-    }
-
-    public function saveCard(Request $request)
-{
-    Stripe::setApiKey(env('STRIPE_SECRET')); // your Stripe secret key
-
-    $user = auth()->user(); // or however you access your user
-    $paymentMethodId = $request->payment_method;
-
-    // If the user doesn't already have a Stripe customer id, create one
-    if (!$user->stripe_customer_id) {
-        $customer = Customer::create([
-            'email' => $user->email,
+        return view('stripe.deposit', [
+            'hasDefault' => $user->hasDefaultPaymentMethod(),
+            'defaultPaymentMethodId' => $user->defaultPaymentMethod()?->id,
         ]);
-
-        $user->stripe_customer_id = $customer->id;
-        $user->save();
     }
 
-    // Attach the payment method to the customer
-    $paymentMethod = PaymentMethod::retrieve($paymentMethodId);
-    $paymentMethod->attach([
-        'customer' => $user->stripe_customer_id,
-    ]);
-
-    // Optionally set as default payment method
-    \Stripe\Customer::update($user->stripe_customer_id, [
-        'invoice_settings' => [
-            'default_payment_method' => $paymentMethodId,
-        ],
-    ]);
-
-    return response()->json(['success' => true, 'message' => 'Card saved successfully!']);
-}
-
-    public function handlePayment(Request $request)
+    public function processDeposit(Request $request)
     {
-        $key = "sk_test_REMOVED";
-        Stripe::setApiKey($key);;
-        $user = $request->user();
-
-        $chargeRequest = [
-            'amount' => $request->amount * 100, // Amount in cents
-            'currency' => 'usd',
-            'source' => "tok_mastercard",
-            'description' => 'Payment from user ID ' . $user->id,
-        ];
+        Stripe::setApiKey(env('STRIPE_SECRET'));
 
         try {
-            $charge = Charge::create($chargeRequest);
+            $user = auth()->user(); // Get the authenticated user
 
-            $chargeResponse = [
-                'status' => $charge->status,
-                'id' => $charge->id,
-                'amount' => $charge->amount,
-                'currency' => $charge->currency,
-                'description' => $charge->description,
-            ];
-
-            ChargeLog::create([
-                'request' => json_encode($chargeRequest),
-                'response' => json_encode($chargeResponse),
-            ]);
-
-            if ($charge->status === 'succeeded') {
-                $this->updateDeposit($user, $request->amount);
-                return response()->json(['success_message' => 'Payment successful!']);
-            } else {
-                return response()->json(['error_message' => 'Error! Payment failed.'], 500);
+            // Ensure the user has a Stripe customer ID
+            if (!$user->stripe_id) {
+                $user->createOrGetStripeCustomer();
             }
 
-        } catch (\Exception $e) {
-            ChargeLog::create([
-                'request' => json_encode($chargeRequest),
-                'response' => json_encode(['error_message' => $e->getMessage()]),
+            $paymentIntent = PaymentIntent::create([
+                'amount' => $request->amount * 100, // Convert to cents
+                'currency' => 'eur',
+                'customer' => $user->stripe_id, // Include the customer ID
+                'payment_method' => $request->payment_method,
+                'confirmation_method' => 'automatic', // Ensure this is set to 'automatic'
+                'confirm' => true,
+                'return_url' => route('payment.complete'), // Provide a return URL for redirect-based methods
             ]);
 
-            return response()->json(['error_message' => 'Error! ' . $e->getMessage()], 500);
+            return response()->json([
+                'success' => true,
+                'client_secret' => $paymentIntent->client_secret,
+                'new_balance' => $this->calculateNewBalance($request->amount), // Replace with your logic
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => true,
+                'message' => $e->getMessage(),
+            ]);
         }
+    }
+
+    public function paymentComplete(Request $request)
+    {
+        return view('payment_complete');
     }
 
     public function updateDeposit(User $user, $amount)
     {
-        return;
-        // We're going to have to calculate the percentage taken from the payment to stripe
-        //Then the percentage to us to keep the site going
-        //Then most likely create a view to get the customers 
-        
+        $siteFee = round($amount * 0.025, 2); // example: 2.5% fee
+    
         Deposit::create([
             'user_id' => $user->id,
             'gross_amount' => $amount,
+            'site_fee' => $siteFee,
+            'net_amount' => $amount - $siteFee,
         ]);
-
-        // Update user funds
-        $user->funds += $amount;
-        $user->save();
     }
 
-    public function widthdrawl(Request $request){
-        //Get user
-        //Get
-    }
-    public function storePaymentMethod(Request $request)
+    public function createSetupIntent(Request $request)
     {
         $user = auth()->user();
 
-        try {
-            if (!$user->hasStripeId()) {
-                $user->createAsStripeCustomer();
-            }
+        // Ensure the user is a Stripe customer
+        $user->createOrGetStripeCustomer();
 
-            $chargeRequest = [
-                'action' => 'store_payment_method',
-                'user_id' => $user->id,
-                'payment_method' => $request->payment_method,
-                'billing' => $request->only(['name', 'email', 'line1', 'city', 'state', 'postal_code', 'country']),
-            ];
+        // Create a SetupIntent
+        $setupIntent = SetupIntent::create([
+            'customer' => $user->stripe_id,
+        ]);
 
-            // Save and set default method
-            $user->charge(5000, $request->payment_method); // Charge $50
-            $user->updateDefaultPaymentMethod($request->payment_method);
+        return response()->json([
+            'client_secret' => $setupIntent->client_secret,
+        ]);
+    }
 
-            // Optional: attach billing address to Stripe customer
-            $user->updateStripeCustomer([
-                'name' => $request->name,
-                'email' => $request->email,
-                'address' => [
-                    'line1' => $request->line1,
-                    'city' => $request->city,
-                    'state' => $request->state,
-                    'postal_code' => $request->postal_code,
-                    'country' => $request->country,
-                ]
-            ]);
-
-            $chargeResponse = [
-                'status' => 'success',
-                'default_payment_method' => $user->defaultPaymentMethod()?->id,
-            ];
-
-            ChargeLog::create([
-                'request' => json_encode($chargeRequest),
-                'response' => json_encode($chargeResponse),
-            ]);
-
-            return redirect()->back()->with('success', 'Card added successfully!');
-        } catch (\Exception $e) {
-            $chargeResponse = [
-                'status' => 'error',
-                'message' => $e->getMessage(),
-            ];
-
-            ChargeLog::create([
-                'request' => json_encode($request->all()),
-                'response' => json_encode($chargeResponse),
-            ]);
-
-            return redirect()->back()->with('error', 'Error saving card: ' . $e->getMessage());
+    public function deleteCard(Request $request)
+    {
+        $user = auth()->user();
+        // Check if the user has a Stripe customer ID
+        if (!$user->stripe_id) {
+           // return redirect()->back()->with('error', 'No card on file.');
         }
+
+        $stripe = new StripeClient(env('STRIPE_SECRET'));
+
+        // Validate the card type from the request
+        $request->validate([
+            'card_type' => 'required|string',
+        ]);
+
+        // Retrieve all payment methods for the customer based on the card type
+        $paymentMethods = $stripe->paymentMethods->all([
+            'customer' => $user->stripe_id,
+            'type' => $request->input('card_type'),
+        ]);
+
+        //{"object":"list","data":[{"id":"pm_1RKnMxG2co1PzDgDjGJ1gLbf","object":"payment_method","allow_redisplay":"unspecified","billing_details":{"address":{"city":"dublin","country":"IE","line1":"Block D Gleann na heorna","line2":null,"postal_code":"33333","state":"Tallaght"},"email":"anon@anon.com","name":"anon","phone":null,"tax_id":null},"card":{"brand":"visa","checks":{"address_line1_check":"pass","address_postal_code_check":"pass","cvc_check":"pass"},"country":"US","display_brand":"visa","exp_month":3,"exp_year":2033,"fingerprint":"gLkh7w87KCi14iDT","funding":"credit","generated_from":null,"last4":"4242","networks":{"available":["visa"],"preferred":null},"regulated_status":"unregulated","three_d_secure_usage":{"supported":true},"wallet":null},"created":1746306791,"customer":"cus_SFHrLyBO4XrPWp","livemode":false,"metadata":[],"type":"card"}],"has_more":false,"url":"\/v1\/payment_methods"}
+        if (!empty($paymentMethods->data) && count($paymentMethods->data) > 0) {
+            // Detach the first payment method (default card)
+            $stripe->paymentMethods->detach($paymentMethods->data[0]->id);
+
+            // Clear the user's default payment method details in the database
+            $user->update([
+                'pm_type' => null,
+                'pm_last_four' => null,
+            ]);
+
+            return redirect()->back()->with('success', 'Card deleted successfully.');
+        } else {
+            return redirect()->back()->with('error', 'No card found to delete.');
+        }
+    }
+
+    private function calculateNewBalance($depositAmount)
+    {
+        $user = auth()->user();
+
+        // Fetch the user's current balance (assuming you have a `balance` field in the `users` table)
+        $currentBalance = $user->balance ?? 0;
+
+        // Add the deposit amount to the current balance
+        $newBalance = $currentBalance + $depositAmount;
+
+        // Update the user's balance in the database
+        $user->update(['balance' => $newBalance]);
+
+        return $newBalance;
     }
 }

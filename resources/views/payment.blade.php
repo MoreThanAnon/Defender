@@ -8,18 +8,15 @@
 
     <form id="payment-form" action="{{ route('payment.handle') }}" method="POST">
         @csrf
-
         <div class="form-group">
             <label for="amount">Amount to Deposit</label>
             <input type="number" class="form-control" id="amount" name="amount" required>
         </div>
-
         <div class="form-group mt-3">
             <label for="card-element">Card Details</label>
             <div id="card-element" class="form-control p-2"></div>
             <div id="card-errors" class="text-danger mt-2"></div>
         </div>
-
         <input type="hidden" name="stripeToken" id="stripeToken">
 
         <button type="submit" class="btn btn-primary mt-3">Deposit</button>

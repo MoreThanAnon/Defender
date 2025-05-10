@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\Property; // Ensure this line is present
 use App\Models\Bids;
 use App\Models\Image;
+use Log;
 
 class PropertiesController extends Controller
 {
@@ -48,13 +49,13 @@ class PropertiesController extends Controller
     }
     public function placeBid(Request $request, $id)
     {
+
         $request->validate([
             'bidAmount' => 'required|numeric|min:1',
         ]);
     
         $property = Property::findOrFail($id);
         $user = auth()->user();
-    
         // Check if the user has enough funds
         if ($user->funds < $request->bidAmount) {
             return response()->json(['success' => false, 'message' => 'You do not have enough funds to place this bid.']);

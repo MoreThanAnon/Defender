@@ -76,6 +76,21 @@
                             <label for="longitude">Longitude</label>
                             <input type="text" id="longitude" name="longitude" class="form-control" value="{{ $property->longitude ?? '' }}" required>
                         </div>
+                        <div class="form-group mt-4">
+                            <label>Current Cover Image</label>
+                            @if(isset($property->cover_image) && $property->cover_image)
+                                <div class="position-relative" style="width: 150px;">
+                                    <img src="{{ asset('storage/' . $property->cover_image) }}" class="img-thumbnail" />
+                                    <label class="text-danger" style="position: absolute; top: 5px; right: 10px; cursor: pointer;">
+                                        <input type="checkbox" name="delete_cover_image" value="1" />
+                                        ✖
+                                    </label>
+                                </div>
+                            @else
+                                <p>No cover image uploaded.</p>
+                            @endif
+                        </div>
+                        <hr><br><hr>
                         @if($images && count($images))
                         <div class="form-group mt-4">
                             <label>Current Images</label>

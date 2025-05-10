@@ -1,0 +1,72 @@
+Ah, thanks for the clarification — yes, Tesseract OCR is an excellent choice for your purpose.
+https://en.wikipedia.org/wiki/Optical_character_recognition
+✅ What Tesseract Can Do:
+Extracts text from scanned images or image-based PDFs.
+
+Supports many languages and scripts.
+
+Fully free and open source (Apache 2.0 license).
+
+Works offline — no cloud or API required.
+
+⚙️ How to Use It for Bills/Passports
+Step 1: Install Tesseract
+On Linux:
+
+bash
+Copy code
+sudo apt install tesseract-ocr
+On macOS (via Homebrew):
+
+bash
+Copy code
+brew install tesseract
+On Windows: Download here
+
+Step 2: Install Python Wrapper
+You'll likely want the pytesseract wrapper for Python:
+
+bash
+Copy code
+pip install pytesseract
+Also useful: pdf2image to convert PDF pages to images:
+
+bash
+Copy code
+pip install pdf2image
+🧪 Basic Example: Passport or Utility Bill Detection
+python
+Copy code
+import pytesseract
+from pdf2image import convert_from_path
+
+# Set this path to your Tesseract install (Windows only)
+# pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+
+def extract_text_from_pdf(pdf_path):
+    pages = convert_from_path(pdf_path)
+    text = ""
+    for page in pages:
+        text += pytesseract.image_to_string(page)
+    return text
+
+def detect_document_type(text):
+    if "passport" in text.lower() or "mrz" in text:
+        return "Likely Passport"
+    elif any(word in text.lower() for word in ["utility bill", "account number", "billing", "electricity", "gas"]):
+        return "Likely Utility Bill"
+    else:
+        return "Unknown Document Type"
+
+pdf_path = "example.pdf"
+text = extract_text_from_pdf(pdf_path)
+result = detect_document_type(text)
+print(result)
+📝 Summary
+✅ Yes, Tesseract works for extracting text from PDF scans or images.
+
+🛠️ Combine it with some logic or a local LLM to classify the documents.
+
+🔐 Totally offline and free.
+
+Would you like help modifying this script to work with folders of documents or improve detection logic (e.g., passport MRZ validation)?

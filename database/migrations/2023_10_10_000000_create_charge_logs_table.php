@@ -11,7 +11,7 @@ class CreateChargeLogsTable extends Migration
         Schema::create('charge_logs', function (Blueprint $table) {
             $table->id();
             $table->string('request',500);
-            $table->string('response',500);
+            $table->longText('response');
             $table->timestamps();
         });
     }
