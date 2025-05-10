@@ -16,21 +16,6 @@ class PropertyController extends Controller
         //$this->middleware(['auth', 'role:moderator,admin'])->only('store');
     }
 
-    public function bid (Request $request, $id)
-    {
-        $request->validate([
-            'bidAmount' => 'required|numeric|min:1',
-        ]);
-        $user = auth()->user();
-
-        // Check if user has sufficient funds
-        if (!$user->userHasSufficientFunds($request->bidAmount)) {
-            return redirect()->back()->withErrors(['error' => 'Insufficient funds to place this bid.']);
-        }
-
-        return redirect()->back()->with('success', 'Your bid has been placed successfully.');
-    }
-
     public function setStatus(Request $request)
     {
         // Find the property by ID
@@ -45,35 +30,6 @@ class PropertyController extends Controller
         // Optionally, you can redirect or return a response
         return redirect()->back()->with('success', 'Property status updated successfully.');
     }
-    public function placeBid(Request $request, $id)
-    {
-        $request->validate([
-            'bidAmount' => 'required|numeric|min:1',
-        ]);
-    
-        $property = Property::findOrFail($id);
-        $user = auth()->user();
-    
-        // Check if the user has enough funds
-        if ($user->funds < $request->bidAmount) {
-            return response()->json(['success' => false, 'message' => 'You do not have enough funds to place this bid.']);
-        }
-    
-        // Deduct the bid amount from the user's funds
-        $user->funds -= $request->bidAmount;
-        $user->save();
-    
-        // Create a new bid entry
-        Bid::create([
-            'property_id' => $property->id,
-            'user_id' => $user->id,
-            'amount' => $request->bidAmount,
-            'status' => 'pending', // Default status
-        ]);
-    
-        return response()->json(['success' => true, 'message' => 'Your bid has been placed successfully!']);
-    }
-
 
     /**
      * Show the detailed view of a property.

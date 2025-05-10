@@ -49,7 +49,6 @@ class PropertiesController extends Controller
     }
     public function placeBid(Request $request, $id)
     {
-
         $request->validate([
             'bidAmount' => 'required|numeric|min:1',
         ]);
@@ -64,7 +63,7 @@ class PropertiesController extends Controller
         // Deduct the bid amount from the user's funds
         $user->funds -= $request->bidAmount;
         $user->save();
-    
+        
         // Create a new bid entry
         Bids::create([
             'property_id' => $property->id,

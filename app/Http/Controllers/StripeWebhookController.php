@@ -22,7 +22,7 @@ class StripeWebhookController extends Controller
             return response()->json(['error' => 'Invalid payload'], 400);
         } catch (\Stripe\Exception\SignatureVerificationException $e) {
             // Invalid signature
-            return response()->json(data: ['error' => 'Invalid signature'], 400);
+            return response()->json(data: ['error' => 'Invalid signature']);
         }
 
         // Handle the event
