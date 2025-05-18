@@ -1,5 +1,12 @@
 [] Get a prototype working to show off for funding
-
+[] Design a MVP for showing off
+    - Develop a payment system and logic
+    - Fix up the stripe payment system
+    - Get the property page bidding system working
+    - Fix up the home page and just redirect it to the property pages
+    - Fix or remove most of the filter system on the properties page
+    - Design a full cycle for the system
+    - Have a talk with https://www.remglobal.com/about to see what files they use
 [] Get login system fully working and move it to the master branch
 - SMTP server and mail to recover password (reset it)
 - SMTP server to send a secure way to confirm email is right

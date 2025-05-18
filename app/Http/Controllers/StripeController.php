@@ -24,7 +24,6 @@ class StripeController extends Controller
     {
         $user = auth()->user();
         $default = $user->defaultPaymentMethod();
-        //file_put_contents(__DIR__ . '/log.txt', json_encode($default->card));die;
         if (!$user->stripe_id) {
             return response()->json(['error' => 'No default card found'], 404);
         }
@@ -67,6 +66,11 @@ class StripeController extends Controller
     public function showDepositForm()
     {
         $user = auth()->user();
+
+        // Check if the user is authenticated
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'You must be logged in to access this page.');
+        }
 
         return view('stripe.deposit', [
             'hasDefault' => $user->hasDefaultPaymentMethod(),

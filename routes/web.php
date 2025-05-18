@@ -49,6 +49,11 @@ Route::prefix('properties')->group(function () {
     Route::get('/{id}', [PropertyController::class, 'show'])->name('property.show');
     Route::get('/{id}/edit', [PropertyController::class, 'edit'])->name('properties.edit');
     Route::put('/{id}', [PropertyController::class, 'update'])->name('properties.update');
+
+    //File uploads
+    Route::get('/{id}/documents/upload', [PropertyController::class, 'uploadDocumentForm'])->name('properties.documents.upload');
+    Route::post('/{id}/documents/upload', [PropertyController::class, 'storeDocument'])->name('properties.documents.store');
+
 });
 
 Route::get('/property/create', [PropertyController::class, 'create'])->name('property.create');
@@ -56,7 +61,9 @@ Route::post('/property/store', [PropertyController::class, 'store'])->name('prop
 
 // Customer Routes
 Route::middleware('auth')->group(function () {
+    Route::post('/customer/edit', [CustomerController::class, 'edit'])->name('customer.edit');
     Route::get('/customer/edit', [CustomerController::class, 'edit'])->name('customer.edit');
+
     Route::put('/customer/update', [CustomerController::class, 'update'])->name('customer.update');
 });
 

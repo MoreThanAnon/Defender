@@ -3,6 +3,9 @@
 @section('content')
 <div class="container mt-5">
     @include('components.navbar')
+        <div class="container mt-4">
+        <h1 class="text-center fw-bold mb-4">{{ $name ?? 'Property Title' }}</h1>
+    </div>
     @if (session('success'))
         <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
             {{ session('success') }}
@@ -11,34 +14,49 @@
     @endif
     <div class="row">
         <div class="col-lg-8">
-            <div id="propertyImagesCarousel" class="carousel slide mb-4" data-ride="carousel">
-                <div class="carousel-inner">
-                    @if(isset($images) && count($images) > 0)
-                        @foreach($images as $index => $image)
-                            <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
-                                <img src="{{ asset('storage/' . $image->path) }}" class="d-block w-100" alt="Property Image">
-                            </div>
-                        @endforeach
-                    @else
-                        <div class="carousel-item active">
-                            <img src="{{ asset('storage/default-placeholder.png') }}" class="d-block w-100" alt="No Images Available">
-                        </div>
-                    @endif
+<div id="propertyImagesCarousel" class="carousel slide mb-4" data-bs-ride="carousel" style="max-height: 450px; overflow: hidden;">
+    <div class="carousel-inner" style="height: 100%;">
+        @if(isset($images) && count($images) > 0)
+            @foreach($images as $index => $image)
+                <div class="carousel-item {{ $index === 0 ? 'active' : '' }}" style="height: 100%;">
+                    <img src="{{ asset('storage/' . $image->path) }}"
+                         class="d-block w-100 h-100"
+                         style="object-fit: contain;"
+                         alt="Property Image">
                 </div>
-                <a class="carousel-control-prev" href="#propertyImagesCarousel" role="button" data-slide="prev">
-                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                    <span class="sr-only">Previous</span>
-                </a>
-                <a class="carousel-control-next" href="#propertyImagesCarousel" role="button" data-slide="next">
-                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                    <span class="sr-only">Next</span>
-                </a>
+            @endforeach
+        @else
+            <div class="carousel-item active" style="height: 100%;">
+                <img src="{{ asset('storage/default-placeholder.png') }}"
+                     class="d-block w-100 h-100"
+                     style="object-fit: contain;"
+                     alt="No Images Available">
             </div>
+        @endif
+    </div>
+
+    <button class="carousel-control-prev" type="button" data-bs-target="#propertyImagesCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Previous</span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#propertyImagesCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Next</span>
+    </button>
+</div>
+
+
         </div>
 
         <!-- Bid and Add Funds Section -->
         <div class="col-lg-4">
             <!-- Contribute to the Collective Fund -->
+                        <div class="card shadow-sm mb-4">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Your Current Funds</h5>
+                    <p class="text-success">€{{ number_format(auth()->user()->balance, 2) }}</p>
+                </div>
+            </div>
             <div class="card shadow-sm mb-4">
                 <div class="card-body text-center">
                     <h5 class="card-title">Contribute to the Collective Fund</h5>
@@ -97,20 +115,20 @@
     </div>
 
     <!-- Tabs Navigation -->
-    <ul class="nav nav-tabs mt-4" id="propertyTabs" role="tablist">
-        <li class="nav-item">
-            <a class="nav-link active" id="details-tab" data-toggle="tab" href="#details" role="tab">Details</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" id="description-tab" data-toggle="tab" href="#description" role="tab">Description</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" id="features-tab" data-toggle="tab" href="#features" role="tab">Features</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" id="map-tab" data-toggle="tab" href="#map" role="tab">Map</a>
-        </li>
-    </ul>
+<ul class="nav nav-tabs mt-4" id="propertyTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab">Details</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="description-tab" data-bs-toggle="tab" data-bs-target="#description" type="button" role="tab">Description</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="features-tab" data-bs-toggle="tab" data-bs-target="#features" type="button" role="tab">Features</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="map-tab" data-bs-toggle="tab" data-bs-target="#map" type="button" role="tab">Map</button>
+    </li>
+</ul>
 
     <!-- Tabs Content -->
     <div class="tab-content mt-4" id="propertyTabsContent">
@@ -125,8 +143,7 @@
                     <div class="row">
                         <div class="col-md-6">
                             <p class="card-text">
-                                <strong>Beds:</strong> {{ $beds }}<br>
-                                <strong>Baths:</strong> {{ $baths }}<br>
+                                <strong>Bed Rooms:</strong> {{ $beds }}<br>
                                 <strong>Size:</strong> {{ $size }} m²<br>
                                 <strong>Type:</strong> {{ ucfirst($type) }}
                             </p>
@@ -154,8 +171,8 @@
                 <div class="card-body">
                     <h5 class="card-title">Description</h5>
                     <hr>
-                    <p class="card-text text-justify" style="white-space: pre-wrap; line-height: 1.6;">
-                        {{ $description ?? 'No description available.' }}
+                    <p class="card-text text-justify" style="line-height: 1.6;">
+                        {{ trim(strip_tags($description ?? 'No description available.')) }}
                     </p>
                 </div>
             </div>

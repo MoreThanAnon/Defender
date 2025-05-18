@@ -90,6 +90,12 @@
                                 <p>No cover image uploaded.</p>
                             @endif
                         </div>
+
+                        <div class="form-group mt-4">
+                            <label for="cover_image">Upload New Cover Image</label>
+                            <input type="file" name="cover_image" id="cover_image" class="form-control">
+                        </div>
+
                         <hr><br><hr>
                         @if($images && count($images))
                         <div class="form-group mt-4">

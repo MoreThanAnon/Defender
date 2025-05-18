@@ -172,38 +172,64 @@ class PropertyController extends Controller
             'longitude' => 'nullable|numeric',
             'daft_link' => 'nullable|url',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif,jfif|max:2048',
+            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
-    
+
         $property = Property::findOrFail($id);
-        $property->update($validatedData);
+        $property->update([
+            ...$validatedData,
+            'ber_rating' => $validatedData['berRating'] ?? $property->ber_rating,
+        ]);
+
+        // ✅ Handle cover image deletion
+        if ($request->has('delete_cover_image')) {
+            if ($property->cover_image && Storage::disk('public')->exists($property->cover_image)) {
+                Storage::disk('public')->delete($property->cover_image);
+            }
+            $property->cover_image = null;
+        }
+
+        // ✅ Handle new cover image upload
+        if ($request->hasFile('cover_image')) {
+            // Delete old image
+            if ($property->cover_image && Storage::disk('public')->exists($property->cover_image)) {
+                Storage::disk('public')->delete($property->cover_image);
+            }
+
+            // Store new image
+            $coverImagePath = $request->file('cover_image')->store('properties/cover_images', 'public');
+            $property->cover_image = $coverImagePath;
+        }
+
+        $property->save();
+
+        // ✅ Handle deletion of gallery images
         if ($request->has('delete_images')) {
             foreach ($request->input('delete_images') as $imagePath) {
-                // Delete the image file from storage
                 if (Storage::disk('public')->exists($imagePath)) {
                     Storage::disk('public')->delete($imagePath);
                 }
-    
-                // Remove from DB (assuming 'path' column is unique enough)
+
                 Image::where('property_id', $id)
                     ->where('path', $imagePath)
                     ->delete();
             }
         }
-    
+
+        // ✅ Handle new gallery image uploads
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
-                $folderPath = 'properties/' . $id;
-                $path = $image->store($folderPath, 'public');
-    
+                $path = $image->store("properties/{$id}", 'public');
                 Image::create([
                     'property_id' => $id,
                     'path' => $path,
                 ]);
             }
         }
-    
+
         return redirect()->route('property.show', $property->id)->with('success', 'Property updated successfully!');
     }
+
 
     public function addToFund(Request $request, $id)
     {

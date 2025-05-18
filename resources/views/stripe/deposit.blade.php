@@ -1,73 +1,45 @@
 @extends('layouts.app')
 @section('content')
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Deposit Funds</title>
-    <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://js.stripe.com/v3/"></script>
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<script src="https://js.stripe.com/v3/"></script>
 
-    <style>
-        .StripeElement {
-            padding: 12px;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-            background-color: white;
-        }
-        .StripeElement--focus {
-            border-color: #80bdff;
-            box-shadow: 0 0 0 0.25rem rgba(0,123,255,.25);
-        }
-        #card-errors {
-            color: #dc3545;
-            font-size: 0.9rem;
-        }
-        #success-message {
-            color: #28a745;
-            font-size: 1rem;
-            margin-top: 20px;
-        }
-        #error-message {
-            color: #dc3545;
-            font-size: 1rem;
-            margin-top: 20px;
-        }
-        #fee-breakdown {
-            font-size: 0.95rem;
-            margin-top: 10px;
-        }
-    </style>
-</head>
-<body>
 <div class="container py-5">
     @include('components.navbar')
+
     @if(!$hasDefault)
         <script> window.location.href = "{{ route('card.add') }}"; </script>
     @endif
 
     <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div id="depositAmountForm">
-                <h2 class="mb-4 text-center">Enter Deposit Amount</h2>
-                <form id="amountForm">
-                    <div class="mb-3">
-                        <label class="form-label">Deposit Amount (€)</label>
-                        <input type="number" id="depositAmount" name="depositAmount" class="form-control" required placeholder="Enter amount" min="1" step="0.01">
-                    </div>
+        <div class="col-md-6">
+            <div class="card shadow-lg border-0">
+                <div class="card-body p-4">
+                    <h3 class="text-center text-primary mb-4">💳 Add Funds to Your Account</h3>
 
-                    <div id="fee-breakdown" class="text-muted">
-                        <p><strong>Site Fee (2.5%):</strong> €<span id="site-fee">0.00</span></p>
-                        <p><strong>Estimated Stripe Fee (1.4% + €0.25):</strong> €<span id="stripe-fee">0.00</span></p>
-                        <p><strong>Net Amount Credited:</strong> €<span id="net-amount">0.00</span></p>
-                    </div>
+                    <form id="amountForm">
+                        <div class="mb-3">
+                            <label for="depositAmount" class="form-label fw-semibold">Deposit Amount (€)</label>
+                            <input type="number" id="depositAmount" name="depositAmount"
+                                   class="form-control form-control-lg"
+                                   required placeholder="Enter amount" min="1" step="0.01">
+                        </div>
 
-                    <button type="button" id="submit-button" class="btn btn-primary w-100">Deposit</button>
-                </form>
-                <div id="success-message" class="text-center"></div>
-                <div id="error-message" class="text-center"></div>
+                        <div id="fee-breakdown" class="bg-light p-3 rounded mb-3 small">
+                            <p class="mb-1"><strong>Site Fee (2.5%):</strong> €<span id="site-fee">0.00</span></p>
+                            <p class="mb-1"><strong>Stripe Fee (1.4% + €0.25):</strong> €<span id="stripe-fee">0.00</span></p>
+                            <hr>
+                            <p class="mb-0"><strong>Net Amount Credited:</strong> €<span id="net-amount" class="text-success">0.00</span></p>
+                        </div>
+
+                        <button type="button" id="submit-button" class="btn btn-primary w-100 py-2">
+                            Deposit
+                        </button>
+                    </form>
+
+                    <div id="success-message" class="alert alert-success text-center mt-3 d-none"></div>
+                    <div id="error-message" class="alert alert-danger text-center mt-3 d-none"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -82,9 +54,9 @@
         const siteFeeEl = document.getElementById('site-fee');
         const stripeFeeEl = document.getElementById('stripe-fee');
         const netAmountEl = document.getElementById('net-amount');
-        const submitButton = document.getElementById('submit-button');
         const successMessage = document.getElementById('success-message');
         const errorMessage = document.getElementById('error-message');
+        const submitButton = document.getElementById('submit-button');
 
         function updateFeeBreakdown() {
             const amount = parseFloat(depositInput.value);
@@ -108,11 +80,12 @@
         submitButton.addEventListener('click', async function (e) {
             e.preventDefault();
             const amount = parseFloat(depositInput.value);
-            successMessage.textContent = '';
-            errorMessage.textContent = '';
+            successMessage.classList.add('d-none');
+            errorMessage.classList.add('d-none');
 
             if (!amount || amount <= 0) {
                 errorMessage.textContent = 'Please enter a valid deposit amount.';
+                errorMessage.classList.remove('d-none');
                 return;
             }
 
@@ -133,29 +106,30 @@
 
                 if (data.error) {
                     errorMessage.textContent = data.message || 'Something went wrong.';
+                    errorMessage.classList.remove('d-none');
                     return;
                 }
 
                 if (data.requires_action) {
                     const result = await stripe.confirmCardPayment(data.client_secret);
-
                     if (result.error) {
                         errorMessage.textContent = 'Payment failed: ' + result.error.message;
+                        errorMessage.classList.remove('d-none');
                     } else if (result.paymentIntent.status === 'succeeded') {
                         successMessage.textContent = `Deposit successful! Your new balance is €${data.new_balance}.`;
+                        successMessage.classList.remove('d-none');
                     }
                 } else if (data.success) {
                     successMessage.textContent = `Deposit successful! Your new balance is €${data.new_balance}.`;
+                    successMessage.classList.remove('d-none');
                 }
-
             } catch (error) {
                 console.error('Error:', error);
                 errorMessage.textContent = 'An error occurred. Please try again.';
+                errorMessage.classList.remove('d-none');
             }
         });
     });
 </script>
 
-</body>
-</html>
 @endsection

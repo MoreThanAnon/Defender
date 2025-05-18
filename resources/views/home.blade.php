@@ -1,165 +1,68 @@
 @extends('layouts.app')
-@section('content')
 
-<div class="container mt-5">
+@section('content')
+<div class="container py-5">
     @include('components.navbar')
 
-    <div class="row">
+    <div class="row g-4">
+        {{-- Financial & Investment Info --}}
         <div class="col-md-6">
-            <div class="card mb-4">
+            <div class="card shadow-sm border-0 h-100">
                 <div class="card-body">
-                    <h3 class="card-title">Financial Information</h3>
-                    <p>Total Deposits: €{{ $totalDeposits }}</p>
-                    <p>Total Withdrawals: €{{ $totalWithdrawals }}</p>
-                    <p>Loan Support: {{ $loanSupport }}</p>
+                    <h5 class="card-title text-primary fw-bold">Financial Information</h5>
+                    <p class="mb-1">💰 <strong>Total Deposits:</strong> €{{ $totalDeposits }}</p>
+                    <p class="mb-0">🏦 <strong>Total Withdrawals:</strong> €{{ $totalWithdrawals }}</p>
                 </div>
             </div>
         </div>
         <div class="col-md-6">
-            <div class="card mb-4">
+            <div class="card shadow-sm border-0 h-100">
                 <div class="card-body">
-                    <h3 class="card-title">Investment Information</h3>
-                    <p>Total Invested: €{{ $totalInvested }}</p>
-                    <p>Principal Repaid: €{{ $principalRepaid }}</p>
-                    <p>Interest Earned: €{{ $interestEarned }}</p>
+                    <h5 class="card-title text-success fw-bold">Investment Information</h5>
+                    <p class="mb-1">📈 <strong>Total Invested:</strong> €{{ $totalInvested }}</p>
+                    <p class="mb-1">💸 <strong>Principal Repaid:</strong> €{{ $principalRepaid }}</p>
+                    <p class="mb-0">💵 <strong>Interest Earned:</strong> €{{ $interestEarned }}</p>
                 </div>
             </div>
         </div>
-    </div>
-    <div class="row mt-4">
+
+        {{-- Funds & Investments Overview --}}
         <div class="col-md-6">
-            <div class="card mb-4">
+            <div class="card shadow-sm border-0 h-100">
                 <div class="card-body">
-                    <h3 class="card-title">AutoInvest and Balance</h3>
-                    <div class="form-group">
-                        <label for="autoInvest">AutoInvest</label>
-                        <input
-                            type="text"
-                            id="autoInvest"
-                            class="form-control"
-                            oninput="handleAutoInvestChange(event)"
-                        />
-                        <small id="autoInvestError" class="text-danger"></small>
-                    </div>
-                    <p>Available Cash: €{{ $availableCash }}</p>
+                    <h5 class="card-title text-secondary fw-bold">Funds Overview</h5>
+                    <p class="mb-1"><strong>Total Deposits:</strong> €{{ $totalDeposits }}</p>
+                    <p class="mb-0"><strong>Total Withdrawals:</strong> €{{ $totalWithdrawals }}</p>
                 </div>
             </div>
         </div>
         <div class="col-md-6">
-            <div class="card mb-4">
+            <div class="card shadow-sm border-0 h-100">
                 <div class="card-body">
-                    <h3 class="card-title">Funds Overview</h3>
-                    <p>Total Deposits: €{{ $totalDeposits }}</p>
-                    <p>Total Withdrawals: €{{ $totalWithdrawals }}</p>
+                    <h5 class="card-title text-secondary fw-bold">Investments Overview</h5>
+                    <p class="mb-1"><strong>Total Invested:</strong> €{{ $totalInvested }}</p>
+                    <p class="mb-1"><strong>Principal Repaid:</strong> €{{ $principalRepaid }}</p>
+                    <p class="mb-0"><strong>Interest Earned:</strong> €{{ $interestEarned }}</p>
                 </div>
             </div>
         </div>
-    </div>
-    <div class="row mt-4">
-        <div class="col-md-6">
-            <div class="card mb-4">
+
+        {{-- Recent Activity --}}
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
                 <div class="card-body">
-                    <h3 class="card-title">Investments Overview</h3>
-                    <p>Total Invested: €{{ $totalInvested }}</p>
-                    <p>Principal Repaid: €{{ $principalRepaid }}</p>
-                    <p>Interest Earned: €{{ $interestEarned }}</p>
-                    <p>Live Investments: €{{ $liveInvestments }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h3 class="card-title">Deductions</h3>
-                    <p>Investor Fee: €{{ $investorFee }}</p>
-                    <p>Balance Fee: €{{ $balanceFee }}</p>
-                    <p>Remaining Balance: €{{ $remainingBalance }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="row mt-4">
-        <div class="col-md-12">
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h3 class="card-title">Recent Activity</h3>
-                    <ul>
+                    <h5 class="card-title text-info fw-bold">Recent Activity</h5>
+                    <ul class="list-group list-group-flush">
                         @foreach ($recentActivities as $activity)
-                            <li>{{ $activity }}</li>
+                            <li class="list-group-item">{{ $activity }}</li>
                         @endforeach
                     </ul>
                 </div>
             </div>
         </div>
     </div>
-    <div class="row mt-4">
-        <div class="col-md-6">
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h3 class="card-title">Account Value</h3>
-                    <p>Principal Outstanding: €{{ $principalOutstanding }}</p>
-                    <p>Live Investments: €{{ $liveInvestments }}</p>
-                    <p>Available Cash: €{{ $availableCash }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h3 class="card-title">Investor Portfolio</h3>
-                    <p>Loans Supported: {{ $loanSupport }}</p>
-                    <p>0 Repaying Loans: €{{ $repayingLoansInvested }} invested, €{{ $repayingLoansRepaid }} repaid, €{{ $repayingLoansEarned }} earned</p>
-                    <p>30 Finished Loans: €{{ $finishedLoansInvested }} invested, €{{ $finishedLoansRepaid }} repaid, €{{ $finishedLoansEarned }} earned</p>
-                    <p>2 Bad Debt Loans: €{{ $badDebtLoansInvested }} invested, €{{ $badDebtLoansRepaid }} repaid, €{{ $badDebtLoansEarned }} earned</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="row mt-4">
-        <div class="col-md-12">
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h3 class="card-title">Crowd Funding</h3>
-                    <p>Current Fund: €{{ $currentFund }}</p>
-                    <p>Target Fund: €{{ $targetFund }}</p>
-                    <div class="form-group">
-                        <label for="fundAmount">Contribute to Fund</label>
-                        <input
-                            type="number"
-                            id="fundAmount"
-                            class="form-control"
-                            oninput="handleFundAmountChange(event)"
-                        />
-                        <small id="fundAmountError" class="text-danger"></small>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    @include('components.footer')
+
 </div>
 
-<script>
-    function handleAutoInvestChange(e) {
-        const value = e.target.value;
-        let autoInvestError = '';
-        if (parseFloat(value) > {{ $availableCash }}) {
-            autoInvestError = 'Balance is too low';
-        }
-        document.getElementById('autoInvestError').innerText = autoInvestError;
-    }
-
-    function handleFundAmountChange(e) {
-        const value = e.target.value;
-        let fundAmountError = '';
-        if (parseFloat(value) > {{ $availableCash }}) {
-            fundAmountError = 'Balance is too low';
-        }
-        document.getElementById('fundAmountError').innerText = fundAmountError;
-    }
-
-    function voteForCandidate(candidateId) {
-        // Implement the voting logic here
-        alert('Voted for candidate ' + candidateId);
-    }
-</script>
 @endsection
