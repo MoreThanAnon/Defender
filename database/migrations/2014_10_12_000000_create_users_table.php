@@ -34,6 +34,7 @@ return new class extends Migration
                 $table->string('county')->nullable();
                 $table->string('pm_last_four', 4)->nullable();
                 $table->string('pm_type')->nullable();
+                $table->string('eircode_region')->nullable();
                 $table->timestamps();
             });
         }

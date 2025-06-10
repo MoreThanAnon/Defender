@@ -118,6 +118,25 @@
                         <label for="images">Upload New Images</label>
                         <input type="file" name="images[]" id="images" class="form-control" multiple>
                     </div>
+
+                    <div class="form-group mt-4">
+                        <label for="campaign_start">Campaign Start Date</label>
+                        <input type="date" id="campaign_start" name="campaign_start" class="form-control"
+                               value="{{ isset($property->campaign_start) ? \Carbon\Carbon::parse($property->campaign_start)->format('Y-m-d') : '' }}">
+                    </div>
+
+                    <div class="form-group mt-4">
+                        <label for="campaign_end">Campaign End Date</label>
+                        <input type="date" id="campaign_end" name="campaign_end" class="form-control"
+                               value="{{ isset($property->campaign_end) ? \Carbon\Carbon::parse($property->campaign_end)->format('Y-m-d') : '' }}">
+                    </div>
+
+                    <div class="form-group mt-4">
+                        <label for="internal_days">Internal Days</label>
+                        <input type="number" id="internal_days" name="internal_days" class="form-control"
+                               value="{{ $property->internal_days ?? 0 }}" min="0">
+                    </div>
+
                         <button type="submit" class="btn btn-primary">{{ isset($property) ? 'Update Property' : 'Create Property' }}</button>
                     </form>
                 </div>

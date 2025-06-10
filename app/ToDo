@@ -1,4 +1,5 @@
 [] Get a prototype working to show off for funding
+[] Bidding system, implement or just fix up the eircode region system, only locals can bid kinda things
 [] Design a MVP for showing off
     - Develop a payment system and logic
     - Fix up the stripe payment system

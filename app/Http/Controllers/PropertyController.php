@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Image;
 use App\Models\Bids;
+use Carbon\Carbon;
+
 class PropertyController extends Controller
 {
 
@@ -42,21 +44,48 @@ class PropertyController extends Controller
         $userBid = null;
         $user = auth()->user();
         $property = Property::with('images')->findOrFail($id);
-        
+
+        // Extract property eircode region (first 3 characters)
+        $propertyRegion = $property->eircode ? substr($property->eircode, 0, 3) : null;
+        $userRegion = $user && $user->eircode_region ? $user->eircode_region : null;
+
+        // Calculate locals-only period
+        $campaignStart = $property->campaign_start ? \Carbon\Carbon::parse($property->campaign_start) : null;
+        $now = now();
+        $localsOnly = false;
+        if ($campaignStart && $property->internal_days > 0) {
+            $localsOnlyEnd = $campaignStart->copy()->addDays($property->internal_days);
+            $localsOnly = $now->between($campaignStart, $localsOnlyEnd);
+        }
+
+        // Is user local?
+        $isLocalUser = $user && $propertyRegion && $userRegion && $propertyRegion === $userRegion;
         if ($user) {
             $userBid = Bids::where('property_id', $id)
                 ->where('user_id', $user->id)
                 ->first();
         }
-        
+
         $bids = Bids::where('property_id', $id)->get(); // Retrieve all bids for the property
         $images = Image::where('property_id', $id)->get();
 
-        $collectiveFund = "";
+        // Add campaign timing variables
+        $campaignStart = $property->campaign_start ? \Carbon\Carbon::parse($property->campaign_start) : null;
+        $campaignEnd = $property->campaign_end ? \Carbon\Carbon::parse($property->campaign_end) : null;
+        $internalDays = $property->internal_days ?? 0;
+        $internalEnd = Carbon::parse($property->campaign_start)->addDays($property->internal_days);
+        $now = Carbon::now();
+// This line checks if the current time is still within the internal bidding period
+// AND if the logged-in user's eircode region is NOT the same as the property's eircode region.
+// If both are true, then locals-only bidding is in effect and the current user is NOT local.
+$localsOnly = $now->lessThan($internalEnd) && (auth()->user()->eircode_region !== $property->eircode_region);
+
         return view('property', [
             'id' => $property->id,
             'name' => $property->name,
             'price' => $property->price,
+            'localsOnly' => $localsOnly,
+            'propertyRegion' => $property->eircode_region,
             'beds' => $property->beds,
             'baths' => $property->baths,
             'size' => $property->size,
@@ -77,7 +106,17 @@ class PropertyController extends Controller
             'userBid' => $userBid,
             'bids' => $bids,
             'images' => $images,
-            'property_status'=>$property->status,
+            'property_status' => $property->status,
+            'campaign_start' => $property->campaign_start,
+            'campaign_end' => $property->campaign_end,
+            'internal_days' => $property->internal_days,
+            // Optionally, pass Carbon instances if you want to use them in JS
+            'campaignStart' => $property->campaign_start,
+            'campaignEnd' => $property->campaign_end,
+            'internalDays' => $property->internal_days,
+            'isLocalUser' => $isLocalUser,
+            'propertyRegion' => $propertyRegion,
+            'userRegion' => $userRegion,
         ]);
     }
 
@@ -114,16 +153,21 @@ class PropertyController extends Controller
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
             'images' => 'nullable|array',
-            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Validate each file
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'campaign_start' => 'nullable|date',
+            'campaign_end' => 'nullable|date',
+            'internal_days' => 'nullable|integer|min:0',
         ]);
-    
+
         $propertyData = $request->except('images');
-        
         if ($request->filled('features')) {
             $propertyData['features'] = json_encode(explode(',', $request->features));
         }
-        $uploadedImages = [];
+        $propertyData['campaign_start'] = $request->campaign_start;
+        $propertyData['campaign_end'] = $request->campaign_end;
+        $propertyData['internal_days'] = $request->internal_days ?? 0;
 
+        $uploadedImages = [];
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
                 $path = $image->store('properties', 'public');
@@ -139,9 +183,7 @@ class PropertyController extends Controller
             ]);
         }
         return redirect()->route('properties.index')->with('success', 'Property created successfully!');
-    
-}
-    
+    }
 
     public function edit($id)
     {
@@ -173,14 +215,17 @@ class PropertyController extends Controller
             'daft_link' => 'nullable|url',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif,jfif|max:2048',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'campaign_start' => 'nullable|date',
+            'campaign_end' => 'nullable|date',
+            'internal_days' => 'nullable|integer|min:0',
         ]);
 
         $property = Property::findOrFail($id);
-        $property->update([
-            ...$validatedData,
-            'ber_rating' => $validatedData['berRating'] ?? $property->ber_rating,
-        ]);
 
+        $property->ber_rating = $request->berRating ?? $property->ber_rating;
+        $property->campaign_start = $request->campaign_start;
+        $property->campaign_end = $request->campaign_end;
+        $property->internal_days = $request->internal_days ?? 0;
         // ✅ Handle cover image deletion
         if ($request->has('delete_cover_image')) {
             if ($property->cover_image && Storage::disk('public')->exists($property->cover_image)) {
@@ -191,12 +236,9 @@ class PropertyController extends Controller
 
         // ✅ Handle new cover image upload
         if ($request->hasFile('cover_image')) {
-            // Delete old image
             if ($property->cover_image && Storage::disk('public')->exists($property->cover_image)) {
                 Storage::disk('public')->delete($property->cover_image);
             }
-
-            // Store new image
             $coverImagePath = $request->file('cover_image')->store('properties/cover_images', 'public');
             $property->cover_image = $coverImagePath;
         }
@@ -209,7 +251,6 @@ class PropertyController extends Controller
                 if (Storage::disk('public')->exists($imagePath)) {
                     Storage::disk('public')->delete($imagePath);
                 }
-
                 Image::where('property_id', $id)
                     ->where('path', $imagePath)
                     ->delete();

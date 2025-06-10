@@ -26,8 +26,11 @@ class CreatePropertiesTable extends Migration
             $table->string('auctioneer_name', 255)->nullable();
             $table->decimal('latitude', 10, 8)->nullable();
             $table->decimal('longitude', 11, 8)->nullable();
-            $table->integer('status');
+            $table->integer('status')->default(2);
             $table->foreign('status')->references('id')->on('properties_status')->onDelete('cascade');
+            $table->date('campaign_start')->nullable(); //When the campaign starts and lets people bid
+            $table->date('campaign_end')->nullable();//When the campaign ends and no more bids can be placed (how do we even set this up)
+            $table->integer('internal_days')->default(0); // Number of days for internal bidding
             $table->timestamps();
         });
     }

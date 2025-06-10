@@ -55,24 +55,49 @@ class PropertiesController extends Controller
     
         $property = Property::findOrFail($id);
         $user = auth()->user();
-        // Check if the user has enough funds
-        if ($user->funds < $request->bidAmount) {
-            return response()->json(['success' => false, 'message' => 'You do not have enough funds to place this bid.']);
+    
+        // Find existing bid for this property and user
+        $existingBid = Bids::where('property_id', $property->id)
+            ->where('user_id', $user->id)
+            ->first();
+    
+        if ($existingBid) {
+            $difference = $request->bidAmount - $existingBid->amount;
+    
+            // If increasing bid, check if user has enough funds for the difference
+            if ($difference > 0 && $user->balance < $difference) {
+                return response()->json(['success' => false, 'message' => 'You do not have enough funds to increase your bid.']);
+            }
+    
+            // Adjust user balance
+            $user->balance -= $difference;
+            $user->save();
+    
+            // Update the existing bid
+            $existingBid->amount = $request->bidAmount;
+            $existingBid->save();
+    
+            return response()->json(['success' => true, 'message' => 'Your bid has been updated successfully!']);
+        } else {
+            // New bid
+            if ($user->balance < $request->bidAmount) {
+                return response()->json(['success' => false, 'message' => 'You do not have enough funds to place this bid.']);
+            }
+    
+            // Deduct the bid amount from the user's funds
+            $user->balance -= $request->bidAmount;
+            $user->save();
+    
+            // Create a new bid entry
+            Bids::create([
+                'property_id' => $property->id,
+                'user_id' => $user->id,
+                'amount' => $request->bidAmount,
+                'status' => 'pending', // Default status
+            ]);
+    
+            return response()->json(['success' => true, 'message' => 'Your bid has been placed successfully!']);
         }
-    
-        // Deduct the bid amount from the user's funds
-        $user->funds -= $request->bidAmount;
-        $user->save();
-        
-        // Create a new bid entry
-        Bids::create([
-            'property_id' => $property->id,
-            'user_id' => $user->id,
-            'amount' => $request->bidAmount,
-            'status' => 'pending', // Default status
-        ]);
-    
-        return response()->json(['success' => true, 'message' => 'Your bid has been placed successfully!']);
     }
     /**
      * Store a newly created property in the database.
@@ -123,7 +148,7 @@ class PropertiesController extends Controller
     
         if ($existingBid) {
             // Refund the bid amount to the user's funds
-            $user->funds += $existingBid->amount;
+            $user->balance += $existingBid->amount;
             $user->save();
     
             // Delete the bid
@@ -133,7 +158,7 @@ class PropertiesController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Your bid has been removed successfully.',
-                'updatedFunds' => $user->funds // Optionally, return updated funds for UI
+                'updatedFunds' => $user->balance // Optionally, return updated funds for UI
             ]);
         }
     
@@ -194,4 +219,6 @@ class PropertiesController extends Controller
         // Redirect to the property page after updating
         return redirect()->route('properties.edit', $property->id)->with('success', 'Property updated successfully!');
     }
+
+
 }
