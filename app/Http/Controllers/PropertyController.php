@@ -283,4 +283,6 @@ $localsOnly = $now->lessThan($internalEnd) && (auth()->user()->eircode_region !=
         return redirect()->back()->with('success', 'Your contribution has been added to the collective fund.');
     }
 
+
+
 }

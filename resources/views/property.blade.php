@@ -73,12 +73,13 @@
                 </div>
             </div>
 
-            <!-- Progress Bar -->
-            <div class="card shadow-sm mb-4">
+            <!-- Funding Progress -->
+            <div class="card shadow-sm mb-4" id="fundingProgressSection">
                 <div class="card-body text-center">
                     <h5 class="card-title">Funding Progress</h5>
                     <div class="progress mb-2" style="height: 25px;">
                         <div class="progress-bar bg-success" role="progressbar"
+                             id="fundingProgressBar"
                              style="width: {{ round(($collectiveFund / $fundGoal) * 100, 2) }}%;"
                              aria-valuenow="{{ round(($collectiveFund / $fundGoal) * 100, 2) }}"
                              aria-valuemin="0"
@@ -86,7 +87,7 @@
                             {{ round(($collectiveFund / $fundGoal) * 100, 2) }}%
                         </div>
                     </div>
-                    <p>€{{ number_format($collectiveFund, 2) }} raised of €{{ number_format($fundGoal, 2) }}</p>
+                    <p id="fundingProgressText">€{{ number_format($collectiveFund, 2) }} raised of €{{ number_format($fundGoal, 2) }}</p>
                 </div>
             </div>
 
@@ -147,11 +148,18 @@
                 @endif
             @endif
 
+            <!-- Place Your Bid Section -->
+            <div class="card shadow-sm mb-4" id="placeBidSection">
+                <div class="card-body text-center">
+                    <!-- ...existing bid form and info... -->
+                </div>
+            </div>
+
             <!-- Funds Overview -->
-            <div class="card shadow-sm mb-4">
+            <div class="card shadow-sm mb-4" id="fundsOverviewSection">
                 <div class="card-body text-center">
                     <h5 class="card-title">Your Current Funds</h5>
-                    <p class="text-success">€{{ number_format(auth()->user()->balance, 2) }}</p>
+                    <p class="text-success" id="userFunds">€{{ number_format(auth()->user()->balance, 2) }}</p>
                 </div>
             </div>
         </div>
@@ -320,7 +328,29 @@
         .then(data => {
             if (data.success) {
                 bidMessage.innerHTML = '<div class="alert alert-success">Your bid has been submitted successfully.</div>';
-                setTimeout(() => location.reload(), 1500);
+
+                // Update Funding Progress
+                const progressBar = document.getElementById('fundingProgressBar');
+                const progressText = document.getElementById('fundingProgressText');
+                const userFunds = document.getElementById('userFunds');
+
+                const percent = Math.round((data.collectiveFund / data.fundGoal) * 10000) / 100;
+                progressBar.style.width = percent + '%';
+                progressBar.textContent = percent + '%';
+                progressBar.setAttribute('aria-valuenow', percent);
+                progressText.textContent =
+                    '€' + Number(data.collectiveFund).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) +
+                    ' raised of €' + Number(data.fundGoal).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                userFunds.textContent =
+                    '€' + Number(data.userbalance).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+                // Highlight updates
+                highlightUpdate(progressBar);
+                highlightUpdate(progressText);
+                highlightUpdate(userFunds);
+
+                // Optionally, update the bid amount in the form
+                document.getElementById('bidAmount').value = parseFloat(bidAmount).toFixed(2);
             } else {
                 bidMessage.innerHTML = '<div class="alert alert-danger">' + (data.message || 'An error occurred.') + '</div>';
             }
@@ -359,6 +389,25 @@
         .catch(() => {
             bidMessage.innerHTML = '<div class="alert alert-danger">An error occurred while removing your bid.</div>';
         });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const bidForm = document.getElementById('bidForm');
+        if (bidForm) {
+            bidForm.addEventListener('submit', function(e) {
+                e.preventDefault(); // Prevent normal form submission
+                SubmitBid();        // Call your AJAX function
+            });
+        }
+    });
+
+    function highlightUpdate(element) {
+        if (!element) return;
+        element.style.transition = 'background-color 0.5s';
+        element.style.backgroundColor = '#ffe066'; // light yellow highlight
+        setTimeout(() => {
+            element.style.backgroundColor = '';
+        }, 800);
     }
 </script>
 @endsection

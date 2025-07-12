@@ -46,7 +46,6 @@ public function login(Request $request)
     ]);
 
     $credentials = $request->only('email', 'password');
-
     if (!$token = JWTAuth::attempt($credentials)) {
         return redirect()->back()->withErrors([
             'email' => 'Invalid credentials'
@@ -55,7 +54,9 @@ public function login(Request $request)
 
     // Store token in session
     session(['jwt_token' => $token]);
-    
+    $user = Auth::user(); // This will be set by JWTAuth::attempt
+
+    Auth::login($user);
     return redirect()->route('home')->with('success', 'Login successful!');
 }
 

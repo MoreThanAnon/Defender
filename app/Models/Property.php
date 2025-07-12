@@ -32,4 +32,14 @@ class Property extends Model
     //SetPropertyInactive -- Stop the property from being bid on (freezes timer)
     //SetInternalDays() -- Set the number of days the property is available for bidding byfor internal bidders
     //SetTimerTotalDays() -- Set the total number of days the property is available for bidding in total.
+
+    public function getCollectiveFunds()
+    {
+        return $this->bids()->sum('amount');
+    }
+
+    public function bids()
+    {
+        return $this->hasMany(\App\Models\Bids::class, 'property_id');
+    }
 }

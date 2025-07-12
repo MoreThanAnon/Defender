@@ -52,51 +52,112 @@ class PropertiesController extends Controller
         $request->validate([
             'bidAmount' => 'required|numeric|min:1',
         ]);
-    
+
         $property = Property::findOrFail($id);
         $user = auth()->user();
-    
+
         // Find existing bid for this property and user
-        $existingBid = Bids::where('property_id', $property->id)
-            ->where('user_id', $user->id)
-            ->first();
-    
+        $existingBid = $property->bids()->where('user_id', $user->id)->first();
+        $newBidAmount = $request->bidAmount;
+
+        // Calculate the current total of all other bids
+        $currentTotal = $property->bids()
+            ->where('user_id', '!=', $user->id)
+            ->sum('amount');
+
+        // Calculate the new total if this bid is accepted
+        $newTotal = $currentTotal + $newBidAmount;
+        $fundGoal = $property->price;
+
+        // Prevent overfunding
+        if ($newTotal > $fundGoal) {
+            $maxAllowed = $fundGoal - $currentTotal;
+            return response()->json([
+                'success' => false,
+                'message' => 'Your bid would overfund this property. The maximum you can bid is €' . number_format($maxAllowed, 2) . '.',
+                'userbalance' => (float) $user->balance,
+                'collectiveFund' => $property->getCollectiveFunds(),
+                'fundGoal' => $fundGoal,
+                'userBid' => $existingBid ? $existingBid->amount : null,
+            ]);
+        }
+
+        // Existing bid logic...
         if ($existingBid) {
-            $difference = $request->bidAmount - $existingBid->amount;
-    
+            $difference = $newBidAmount - $existingBid->amount;
+
+            // If the bid amount is the same, return a message
+            if ($difference == 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Your new bid is the same as your current bid. No changes were made.',
+                    'userbalance' => (float) $user->balance,
+                    'collectiveFund' => $property->getCollectiveFunds(),
+                    'fundGoal' => $property->price,
+                    'userBid' => $existingBid->amount,
+                ]);
+            }
+
             // If increasing bid, check if user has enough funds for the difference
             if ($difference > 0 && $user->balance < $difference) {
-                return response()->json(['success' => false, 'message' => 'You do not have enough funds to increase your bid.']);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You do not have enough funds to increase your bid.',
+                    'userbalance' => (float) $user->balance,
+                    'collectiveFund' => $property->getCollectiveFunds(),
+                    'fundGoal' => $property->price,
+                    'userBid' => $existingBid->amount,
+                ]);
             }
-    
+
             // Adjust user balance
             $user->balance -= $difference;
             $user->save();
-    
+
             // Update the existing bid
-            $existingBid->amount = $request->bidAmount;
+            $existingBid->amount = $newBidAmount;
             $existingBid->save();
-    
-            return response()->json(['success' => true, 'message' => 'Your bid has been updated successfully!']);
-        } else {
-            // New bid
-            if ($user->balance < $request->bidAmount) {
-                return response()->json(['success' => false, 'message' => 'You do not have enough funds to place this bid.']);
-            }
-    
-            // Deduct the bid amount from the user's funds
-            $user->balance -= $request->bidAmount;
-            $user->save();
-    
-            // Create a new bid entry
-            Bids::create([
-                'property_id' => $property->id,
-                'user_id' => $user->id,
-                'amount' => $request->bidAmount,
-                'status' => 'pending', // Default status
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Your bid has been updated successfully!',
+                'collectiveFund' => $property->getCollectiveFunds(),
+                'fundGoal' => $property->price,
+                'userbalance' => (float) $user->balance,
+                'userBid' => $newBidAmount,
             ]);
-    
-            return response()->json(['success' => true, 'message' => 'Your bid has been placed successfully!']);
+        } else {
+            // New bid logic...
+            if ($user->balance < $newBidAmount) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You do not have enough funds to place this bid.',
+                    'userbalance' => (float) $user->balance,
+                    'collectiveFund' => $property->getCollectiveFunds(),
+                    'fundGoal' => $property->price,
+                    'userBid' => null,
+                ]);
+            }
+
+            // Deduct the bid amount from the user's funds
+            $user->balance -= $newBidAmount;
+            $user->save();
+
+            // Create a new bid entry
+            $property->bids()->create([
+                'user_id' => $user->id,
+                'amount' => $newBidAmount,
+                'status' => 'pending', // or your default status
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Your bid has been placed successfully!',
+                'collectiveFund' => $property->getCollectiveFunds(),
+                'fundGoal' => $property->price,
+                'userbalance' => (float) $user->balance,
+                'userBid' => $newBidAmount,
+            ]);
         }
     }
     /**

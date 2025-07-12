@@ -10,8 +10,9 @@ use App\Notifications\CustomVerifyEmail;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\Role;
 use Laravel\Cashier\Billable; // ✅ Add this
+use Tymon\JWTAuth\Contracts\JWTSubject;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable implements MustVerifyEmail, JWTSubject
 {
     use HasApiTokens, HasFactory, Notifiable;
     use Billable; // ✅ Add this to enable Cashier/Stripe features
@@ -91,6 +92,22 @@ class User extends Authenticatable implements MustVerifyEmail
     public function deposits()
     {
         return $this->hasMany(Deposit::class);
+    }
+
+    /**
+     * Get the identifier that will be stored in the subject claim of the JWT.
+     */
+    public function getJWTIdentifier()
+    {
+        return $this->getKey();
+    }
+
+    /**
+     * Return a key value array, containing any custom claims to be added to the JWT.
+     */
+    public function getJWTCustomClaims()
+    {
+        return [];
     }
 }
 
