@@ -3,8 +3,13 @@
 @section('content')
 <div class="container mt-5">
     @include('components.navbar')
-    <div class="container mt-4">
-        <h1 class="text-center fw-bold mb-4">{{ $name ?? 'Property Title' }}</h1>
+    <div class="container mt-4 d-flex justify-content-between align-items-center">
+        <h1 class="fw-bold mb-4">{{ $name ?? 'Property Title' }}</h1>
+        @auth
+            @if(auth()->user()->hasRole('moderator') || auth()->user()->hasRole('admin'))
+                <a href="{{ route('updates.create', $id) }}" class="btn btn-sm btn-primary">Add Update</a>
+            @endif
+        @endauth
     </div>
 
     @if (session('success'))
@@ -178,6 +183,9 @@
     <li class="nav-item" role="presentation">
         <button class="nav-link" id="map-tab" data-bs-toggle="tab" data-bs-target="#map" type="button" role="tab">Map</button>
     </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="updates-tab" data-bs-toggle="tab" data-bs-target="#updates" type="button" role="tab">Updates</button>
+    </li>
 </ul>
 
 <!-- Tabs Content -->
@@ -261,6 +269,29 @@
                         // L.marker([{{ $latitude }}, {{ $longitude }}]).addTo(map);
                     });
                 </script>
+            </div>
+        </div>
+    </div>
+    <div class="tab-pane fade" id="updates" role="tabpanel">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Property Updates</h5>
+                <hr>
+                @forelse($updates as $update)
+                    <div class="mb-4">
+                        <h6 class="fw-bold">{{ $update->title }}</h6>
+                        <p class="small text-muted">{{ $update->created_at->format('M d, Y') }}@if($update->author) by {{ $update->author }}@endif</p>
+                        @if($update->image)
+                            <img src="{{ asset('storage/' . $update->image) }}" class="img-fluid mb-2" alt="update image">
+                        @endif
+                        <p>{{ $update->content }}</p>
+                        @if($update->file)
+                            <a href="{{ asset('storage/' . $update->file) }}" target="_blank" class="btn btn-sm btn-outline-primary">Download {{ strtoupper($update->file_type) }}</a>
+                        @endif
+                    </div>
+                @empty
+                    <p>No updates available.</p>
+                @endforelse
             </div>
         </div>
     </div>

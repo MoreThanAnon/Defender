@@ -16,6 +16,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\ProposalController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\UpdateController;
 
 
 // Public Routes
@@ -60,6 +61,10 @@ Route::prefix('properties')->group(function () {
     Route::get('/{property}/proposals', [ProposalController::class, 'index'])->name('proposals.index');
     Route::get('/{property}/proposals/create', [ProposalController::class, 'create'])->name('proposals.create');
     Route::post('/{property}/proposals', [ProposalController::class, 'store'])->name('proposals.store');
+
+    // Update routes
+    Route::get('/{property}/updates/create', [UpdateController::class, 'create'])->name('updates.create');
+    Route::post('/updates', [UpdateController::class, 'store'])->name('updates.store');
 
 });
 
