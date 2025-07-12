@@ -9,6 +9,7 @@ use Laravel\Sanctum\HasApiTokens;
 use App\Notifications\CustomVerifyEmail;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\Role;
+use App\Models\Address;
 use Laravel\Cashier\Billable; // ✅ Add this
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
@@ -28,14 +29,8 @@ class User extends Authenticatable implements MustVerifyEmail, JWTSubject
         'email', 
         'password', 
         'role', 
-        'real_name', 
-        'eircode', 
-        'address1', 
-        'address2', 
-        'address3', 
-        'city', 
-        'county',
-        'funds', 
+        'real_name',
+        'funds',
         'pm_type',
         'pm_last_four',
         'balance'
@@ -92,6 +87,11 @@ class User extends Authenticatable implements MustVerifyEmail, JWTSubject
     public function deposits()
     {
         return $this->hasMany(Deposit::class);
+    }
+
+    public function address()
+    {
+        return $this->hasOne(Address::class);
     }
 
     /**
