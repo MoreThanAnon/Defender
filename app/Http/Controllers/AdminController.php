@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Investment;
+use App\Models\Property;
 
 class AdminController extends Controller
 {
@@ -29,5 +30,15 @@ class AdminController extends Controller
             'inactiveLoans',
             'avgProfit'
         ));
+    }
+
+    /**
+     * Display a listing of all properties for the admin panel.
+     */
+    public function properties()
+    {
+        $properties = Property::all();
+
+        return view('admin.properties', compact('properties'));
     }
 }

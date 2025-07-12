@@ -15,6 +15,8 @@ use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\ProposalController;
+use App\Http\Controllers\AdminController;
+
 
 // Public Routes
 Route::get('/', fn () => view('welcome'));
@@ -103,9 +105,19 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/card/delete', [StripeController::class, 'deleteCard'])->name('card.delete');
     Route::get('/card/details', [StripeController::class, 'getCardDetails'])->name('card.details');
     Route::get('/stripe/create-setup-intent', [StripeController::class, 'createSetupIntent'])->name('stripe.createSetupIntent');
+
+    // Transactions
+    Route::get('/transactions', [\App\Http\Controllers\TransactionController::class, 'index'])->name('transactions.index');
+});
+
+// Admin Routes
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
+    Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+    Route::get('/properties', [AdminController::class, 'properties'])->name('admin.properties.index');
 });
 
 // Testing
 if (app()->environment('local')) {
     Route::get('/testpayment', [TestController::class, 'testPayment'])->name('test.payment');
 }
+

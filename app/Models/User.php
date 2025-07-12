@@ -95,6 +95,11 @@ class User extends Authenticatable implements MustVerifyEmail, JWTSubject
         return $this->hasMany(Deposit::class);
     }
 
+    public function withdrawals()
+    {
+        return $this->hasMany(withdrawal::class);
+    }
+
     public function address()
     {
         return $this->hasOne(Address::class);
