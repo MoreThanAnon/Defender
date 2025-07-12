@@ -75,17 +75,18 @@ class PropertyController extends Controller
         $internalDays = $property->internal_days ?? 0;
         $internalEnd = Carbon::parse($property->campaign_start)->addDays($property->internal_days);
         $now = Carbon::now();
-// This line checks if the current time is still within the internal bidding period
-// AND if the logged-in user's eircode region is NOT the same as the property's eircode region.
-// If both are true, then locals-only bidding is in effect and the current user is NOT local.
-$localsOnly = $now->lessThan($internalEnd) && (auth()->user()->eircode_region !== $property->eircode_region);
+        // Determine if the current user is prevented from bidding because the
+        // campaign is still in the locals-only period. Guests or users from a
+        // different eircode region are considered "non-local".
+        $localsOnly = $now->lessThan($internalEnd) && (!$user || $userRegion !== $propertyRegion);
 
         return view('property', [
             'id' => $property->id,
             'name' => $property->name,
             'price' => $property->price,
             'localsOnly' => $localsOnly,
-            'propertyRegion' => $property->eircode_region,
+            // Region derived from the property's Eircode (first three characters)
+            'propertyRegion' => $propertyRegion,
             'beds' => $property->beds,
             'baths' => $property->baths,
             'size' => $property->size,
