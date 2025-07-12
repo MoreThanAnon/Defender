@@ -26,12 +26,6 @@ return new class extends Migration
                 $table->rememberToken();
                 $table->string('display_name')->nullable();
                 $table->string('real_name')->nullable();
-                $table->string('eircode')->nullable();
-                $table->string('address1')->nullable();
-                $table->string('address2')->nullable();
-                $table->string('address3')->nullable();
-                $table->string('city')->nullable();
-                $table->string('county')->nullable();
                 $table->string('pm_last_four', 4)->nullable();
                 $table->string('pm_type')->nullable();
                 $table->string('eircode_region')->nullable();
