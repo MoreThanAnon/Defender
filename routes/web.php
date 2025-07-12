@@ -91,6 +91,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/card/delete', [StripeController::class, 'deleteCard'])->name('card.delete');
     Route::get('/card/details', [StripeController::class, 'getCardDetails'])->name('card.details');
     Route::get('/stripe/create-setup-intent', [StripeController::class, 'createSetupIntent'])->name('stripe.createSetupIntent');
+
+    // Transactions
+    Route::get('/transactions', [\App\Http\Controllers\TransactionController::class, 'index'])->name('transactions.index');
 });
 
 // Admin Routes
@@ -103,3 +106,4 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
 if (app()->environment('local')) {
     Route::get('/testpayment', [TestController::class, 'testPayment'])->name('test.payment');
 }
+
