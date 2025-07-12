@@ -33,7 +33,9 @@ class AuthController extends Controller
 
     public function dashboard()
     {
-        return view('home');
+        // Redirect to the main home route where all required
+        // dashboard data is prepared by the HomeController.
+        return redirect()->route('home');
     }
 
     public function logout()
