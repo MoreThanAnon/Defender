@@ -13,7 +13,6 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\BillingController;
-use App\Http\Controllers\BidsController;
 
 // Public Routes
 Route::get('/', fn () => view('welcome'));
