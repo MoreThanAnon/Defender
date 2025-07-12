@@ -45,6 +45,11 @@
             <input type="file" name="image" class="form-control">
         </div>
 
+        <div class="mb-3">
+            <label for="file" class="form-label">Attach File (PDF, DOC, etc.)</label>
+            <input type="file" name="file" class="form-control">
+        </div>
+
         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
             <a href="{{ route('properties.show', $property->id) }}" class="btn btn-secondary me-2">Cancel</a>
             <button type="submit" class="btn btn-primary">Submit Update</button>

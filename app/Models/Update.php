@@ -19,7 +19,11 @@ class Update extends Model
         'property_id',
         'title',
         'content',
+        'description',
+        'author',
         'image',
+        'file',
+        'file_type',
     ];
 
     // Optional: define relationship to Property

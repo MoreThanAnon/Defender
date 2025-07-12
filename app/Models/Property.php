@@ -5,6 +5,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Investment;
 use App\Models\Proposal;
+use App\Models\Update;
 class Property extends Model
 {
     use HasFactory;
@@ -53,5 +54,10 @@ class Property extends Model
     public function proposals()
     {
         return $this->hasMany(Proposal::class);
+    }
+
+    public function updates()
+    {
+        return $this->hasMany(Update::class);
     }
 }

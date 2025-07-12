@@ -68,6 +68,7 @@ class PropertyController extends Controller
 
         $bids = Bids::where('property_id', $id)->get(); // Retrieve all bids for the property
         $images = Image::where('property_id', $id)->get();
+        $updates = $property->updates()->latest()->get();
 
         // Add campaign timing variables
         $campaignStart = $property->campaign_start ? \Carbon\Carbon::parse($property->campaign_start) : null;
@@ -107,6 +108,7 @@ class PropertyController extends Controller
             'userBid' => $userBid,
             'bids' => $bids,
             'images' => $images,
+            'updates' => $updates,
             'property_status' => $property->status,
             'campaign_start' => $property->campaign_start,
             'campaign_end' => $property->campaign_end,
@@ -129,7 +131,10 @@ class PropertyController extends Controller
      */
     public function create()
     {
-        return view('property.create');
+        return view('property_form', [
+            'property' => new Property(),
+            'images' => []
+        ]);
     }
 
     public function getCollectiveFunds($id){

@@ -16,10 +16,9 @@
                             </ul>
                         </div>
                     @endif
-                    <form action="{{ isset($property) ? url('/properties/' . $property->id) : url('/properties') }}" method="POST" enctype="multipart/form-data">
+                    <form action="{{ isset($property->id) ? route('properties.update', $property->id) : route('property.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
-                        @method('PUT')
-                        @if(isset($property))
+                        @if(isset($property->id))
                             @method('PUT')
                         @endif
                         <div class="form-group">
