@@ -21,6 +21,15 @@ Laravel is a web application framework with expressive, elegant syntax. We belie
 
 Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
+## Setup
+
+Copy `.env.example` to `.env` and update the following variables with your own
+values:
+
+- `STRIPE_SECRET`
+- `STRIPE_KEY`
+- `EIRCODE_JSON_PATH`
+
 ## Learning Laravel
 
 Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
