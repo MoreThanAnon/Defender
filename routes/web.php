@@ -8,6 +8,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PropertiesController;
 use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\StripeController;
+use App\Http\Controllers\WithdrawalController;
 use App\Http\Controllers\TestController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\StripeWebhookController;
@@ -78,7 +79,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Withdraw
     Route::get('/withdraw', [StripeController::class, 'showWithdrawForm'])->name('withdraw.form');
-    Route::post('/withdraw/process', [StripeController::class, 'processWithdraw'])->name('stripe.withdraw');
+    Route::post('/withdraw', [WithdrawalController::class, 'process'])->name('stripe.withdraw');
 
     // Payment Flow
     Route::get('/payment/complete', [StripeController::class, 'paymentComplete'])->name('payment.complete');
