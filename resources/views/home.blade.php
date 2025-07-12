@@ -60,6 +60,23 @@
                 </div>
             </div>
         </div>
+
+        {{-- Investments --}}
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold">My Investments</h5>
+                    <ul class="list-group list-group-flush">
+                        @foreach ($investments as $investment)
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                {{ $investment->property->name }} - €{{ $investment->amount }}
+                                <a class="btn btn-sm btn-outline-primary" href="{{ route('proposals.index', $investment->property_id) }}">View Proposals</a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+        </div>
     </div>
     @include('components.footer')
 

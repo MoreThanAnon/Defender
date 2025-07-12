@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Models\withdrawal;
 use App\Models\User;
 use App\Models\Bids;
+use App\Models\Investment;
 
 class HomeController extends Controller
 {
@@ -29,6 +30,8 @@ class HomeController extends Controller
         $principalRepaid = 2057.96;
         $interestEarned = 354.74;
         $investorFee = 38.57;
+
+        $investments = Investment::with('property')->where('user_id', $auth)->get();
 
         $recentActivities = [
             'Monthly repayment of €4.32 by Dundalk Bay Sea Foods Limited (8 months ago)',
@@ -55,6 +58,7 @@ class HomeController extends Controller
             'currentFund' => $currentFund,
             'targetFund' => $targetFund,
             'candidates' => $candidates,
+            'investments' => $investments,
         ]);
     }
 }
