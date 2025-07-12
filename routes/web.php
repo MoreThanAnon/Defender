@@ -92,7 +92,3 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/stripe/create-setup-intent', [StripeController::class, 'createSetupIntent'])->name('stripe.createSetupIntent');
 });
 
-// Testing
-if (app()->environment('local')) {
-    Route::get('/testpayment', [TestController::class, 'testPayment'])->name('test.payment');
-}
