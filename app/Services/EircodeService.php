@@ -12,7 +12,7 @@ class EircodeService
         }
 
         $routingKey = strtoupper(substr($eircode, 0, 3));
-        $filePath = __DIR__ . '/storage/Eircodes/ireland-eircode-routing-keys.json';
+        $filePath = storage_path('Eircodes/ireland-eircode-routing-keys.json');
 
         if (!file_exists($filePath)) {
             throw new \RuntimeException('Eircode data file not found');
