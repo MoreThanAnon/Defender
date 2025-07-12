@@ -46,7 +46,7 @@
 </div>
 
 <script>
-    const stripe = Stripe("pk_test_51R5TisG2co1PzDgDpnL9xWQ7nlNvBhGQYOGEZR1SaRhiwBtiwpsaRspvDHeQoYzvPYJoGMjjKKHYw8qvukTIEst000xcRqVE4l");
+    const stripe = Stripe("{{ env('STRIPE_KEY') }}");
     const defaultPaymentMethod = "{{ $defaultPaymentMethodId }}";
 
     document.addEventListener('DOMContentLoaded', function () {

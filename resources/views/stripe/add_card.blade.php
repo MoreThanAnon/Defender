@@ -93,7 +93,7 @@
 <script src="https://js.stripe.com/v3/"></script>
 <script>
 document.addEventListener('DOMContentLoaded', async function () {
-    const stripe = Stripe("pk_test_51R5TisG2co1PzDgDpnL9xWQ7nlNvBhGQYOGEZR1SaRhiwBtiwpsaRspvDHeQoYzvPYJoGMjjKKHYw8qvukTIEst000xcRqVE4l");
+    const stripe = Stripe("{{ env('STRIPE_KEY') }}");
 
     @if (auth()->user()->hasDefaultPaymentMethod())
         const response = await fetch("{{ route('card.details') }}", {
