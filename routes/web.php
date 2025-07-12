@@ -48,7 +48,9 @@ Route::prefix('properties')->group(function () {
     Route::post('/{id}/set-fund-goal', [PropertiesController::class, 'setFundGoal'])->name('properties.setFundGoal');
     Route::post('/{id}/bid', [PropertiesController::class, 'placeBid'])->name('properties.placeBid');
     Route::post('/{id}/bid/remove', [PropertiesController::class, 'removeBid'])->name('properties.removeBid');
-    Route::get('/set-status/{id}/{status}', [PropertyController::class, 'setStatus'])->name('properties.setStatus');
+    Route::middleware(['auth', 'role:admin'])
+        ->post('/set-status/{id}/{status}', [PropertyController::class, 'setStatus'])
+        ->name('properties.setStatus');
     Route::get('/{id}', [PropertyController::class, 'show'])->name('property.show');
     Route::get('/{id}/edit', [PropertyController::class, 'edit'])->name('properties.edit');
     Route::put('/{id}', [PropertyController::class, 'update'])->name('properties.update');

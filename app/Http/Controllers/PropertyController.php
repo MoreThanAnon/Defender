@@ -18,18 +18,18 @@ class PropertyController extends Controller
         //$this->middleware(['auth', 'role:moderator,admin'])->only('store');
     }
 
-    public function setStatus(Request $request)
+    public function setStatus(Request $request, $id, $status)
     {
-        // Find the property by ID
-        $property = Property::findOrFail($request->id);
-    
-        // Update the status field
-        $property->status = $request->status; // Assuming 'status' is coming from the form/request
-    
-        // Save the changes
+        $request->merge(['status' => $status]);
+
+        $validated = $request->validate([
+            'status' => 'required|exists:properties_status,id',
+        ]);
+
+        $property = Property::findOrFail($id);
+        $property->status = $validated['status'];
         $property->save();
-    
-        // Optionally, you can redirect or return a response
+
         return redirect()->back()->with('success', 'Property status updated successfully.');
     }
 
