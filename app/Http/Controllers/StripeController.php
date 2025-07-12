@@ -9,6 +9,7 @@ use Stripe\SetupIntent;
 use App\Models\ChargeLog;
 use App\Models\User;
 use App\Models\Deposit;
+use App\Models\withdrawal;
 use Illuminate\Support\Facades\Auth;
 use Stripe\StripeClient;
 use Illuminate\Support\Facades\Log;
@@ -78,6 +79,11 @@ class StripeController extends Controller
         ]);
     }
 
+    public function showWithdrawForm()
+    {
+        return view('stripe.withdraw');
+    }
+
     public function processDeposit(Request $request)
     {
         Stripe::setApiKey(env('STRIPE_SECRET'));
@@ -111,6 +117,42 @@ class StripeController extends Controller
                 'message' => $e->getMessage(),
             ]);
         }
+    }
+
+    public function processWithdraw(Request $request)
+    {
+        $request->validate([
+            'amount' => 'required|numeric|min:1',
+        ]);
+
+        $user = auth()->user();
+
+        if ($user->balance < $request->amount) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Insufficient balance.',
+            ]);
+        }
+
+        $amount = $request->amount;
+        $siteFee = round($amount * 0.025, 2);
+        $netAmount = $amount - $siteFee;
+
+        $user->balance -= $amount;
+        $user->save();
+
+        withdrawal::create([
+            'user_id' => $user->id,
+            'gross_amount' => $amount,
+            'site_fee' => $siteFee,
+            'net_amount' => $netAmount,
+            'created_at' => now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'new_balance' => $user->balance,
+        ]);
     }
 
     public function paymentComplete(Request $request)

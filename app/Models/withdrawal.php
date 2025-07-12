@@ -4,52 +4,21 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Http\Request;
+
 
 class withdrawal extends Model
 {
     use HasFactory;
     protected $fillable = [
         'user_id',
-        'amount',
-        'status',
+        'gross_amount',
+        'site_fee',
+        'net_amount',
+        'created_at',
     ];
 
     protected $table = 'withdrawal';
-
-    public function placeBid(Request $request, $id)
-    {
-        $request->validate([
-            'bidAmount' => 'required|numeric|min:1',
-        ]);
-
-        $property = Property::findOrFail($id);
-        $user = auth()->user();
-
-        // Check if the user has enough funds
-        if ($user->funds < $request->bidAmount) {
-            return redirect()->back()->with('error', 'You do not have enough funds to place this bid.');
-        }
-
-        // Deduct the bid amount from the user's funds
-        $user->funds -= $request->bidAmount;
-        $user->save();
-
-        // Create a new bid entry
-        Bid::create([
-            'property_id' => $property->id,
-            'user_id' => $user->id,
-            'amount' => $request->bidAmount,
-            'status' => 'pending', // Default status
-        ]);
-
-        return redirect()->back()->with('success', 'Your bid has been placed successfully!');
-    }
-
-    public function property()
-    {
-        return $this->belongsTo(Property::class);
-    }
+    const UPDATED_AT = null;
 
     public function user()
     {

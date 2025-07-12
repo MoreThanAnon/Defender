@@ -76,6 +76,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/deposit/charge', [StripeController::class, 'processDeposit'])->name('deposit.charge');
     Route::post('/deposit/process', [StripeController::class, 'processDeposit'])->name('stripe.processDeposit');
 
+    // Withdraw
+    Route::get('/withdraw', [StripeController::class, 'showWithdrawForm'])->name('withdraw.form');
+    Route::post('/withdraw/process', [StripeController::class, 'processWithdraw'])->name('stripe.withdraw');
+
     // Payment Flow
     Route::get('/payment/complete', [StripeController::class, 'paymentComplete'])->name('payment.complete');
 
