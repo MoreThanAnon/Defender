@@ -3,6 +3,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Investment;
+use App\Models\Proposal;
 class Property extends Model
 {
     use HasFactory;
@@ -41,5 +43,15 @@ class Property extends Model
     public function bids()
     {
         return $this->hasMany(\App\Models\Bids::class, 'property_id');
+    }
+
+    public function investments()
+    {
+        return $this->hasMany(Investment::class);
+    }
+
+    public function proposals()
+    {
+        return $this->hasMany(Proposal::class);
     }
 }

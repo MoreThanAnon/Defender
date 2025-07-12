@@ -10,6 +10,7 @@ use App\Notifications\CustomVerifyEmail;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\Role;
 use App\Models\Address;
+use App\Models\Investment;
 use Laravel\Cashier\Billable; // ✅ Add this
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
@@ -83,6 +84,11 @@ class User extends Authenticatable implements MustVerifyEmail, JWTSubject
     public function bids()
     {
         return $this->hasMany(Bids::class);
+    }
+
+    public function investments()
+    {
+        return $this->hasMany(Investment::class);
     }
     public function deposits()
     {

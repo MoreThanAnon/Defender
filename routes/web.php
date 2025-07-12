@@ -14,7 +14,9 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\BillingController;
+use App\Http\Controllers\ProposalController;
 use App\Http\Controllers\AdminController;
+
 
 // Public Routes
 Route::get('/', fn () => view('welcome'));
@@ -54,10 +56,22 @@ Route::prefix('properties')->group(function () {
     Route::get('/{id}/documents/upload', [PropertyController::class, 'uploadDocumentForm'])->name('properties.documents.upload');
     Route::post('/{id}/documents/upload', [PropertyController::class, 'storeDocument'])->name('properties.documents.store');
 
+    // Proposal routes
+    Route::get('/{property}/proposals', [ProposalController::class, 'index'])->name('proposals.index');
+    Route::get('/{property}/proposals/create', [ProposalController::class, 'create'])->name('proposals.create');
+    Route::post('/{property}/proposals', [ProposalController::class, 'store'])->name('proposals.store');
+
 });
 
 Route::get('/property/create', [PropertyController::class, 'create'])->name('property.create');
 Route::post('/property/store', [PropertyController::class, 'store'])->name('property.store');
+
+// Proposal detail routes
+Route::get('/proposals/{proposal}', [ProposalController::class, 'show'])->name('proposals.show');
+Route::get('/proposals/{proposal}/edit', [ProposalController::class, 'edit'])->name('proposals.edit');
+Route::put('/proposals/{proposal}', [ProposalController::class, 'update'])->name('proposals.update');
+Route::delete('/proposals/{proposal}', [ProposalController::class, 'destroy'])->name('proposals.destroy');
+Route::post('/proposals/{proposal}/vote', [ProposalController::class, 'vote'])->name('proposals.vote');
 
 // Customer Routes
 Route::middleware('auth')->group(function () {
