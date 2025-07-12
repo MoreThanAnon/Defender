@@ -93,4 +93,6 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // Testing
-Route::get('/testpayment', [TestController::class, 'testPayment'])->name('test.payment');
+if (app()->environment('local')) {
+    Route::get('/testpayment', [TestController::class, 'testPayment'])->name('test.payment');
+}

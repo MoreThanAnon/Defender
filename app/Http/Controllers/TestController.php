@@ -13,6 +13,10 @@ class TestController extends Controller
 {
     public function testPayment()
     {
+        if (!app()->environment('local')) {
+            abort(404);
+        }
+
         $this->testMe("D02X285");die;
         $this->sendEmailVerificationEmail();die;
         //https://dashboard.stripe.com/test/apikeys
@@ -27,6 +31,10 @@ class TestController extends Controller
 
     public function testMe($eircode)
     {
+        if (!app()->environment('local')) {
+            abort(404);
+        }
+
         $output = [];
         $returnCode = 0;
 
