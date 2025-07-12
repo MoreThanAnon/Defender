@@ -30,13 +30,20 @@ class WithdrawalController extends Controller
         $user->balance -= $amount;
         $user->save();
 
-        withdrawal::create([
+        $withdrawal = withdrawal::create([
             'user_id' => $user->id,
             'gross_amount' => $amount,
             'site_fee' => $siteFee,
             'net_amount' => $netAmount,
             'created_at' => now(),
         ]);
+
+        if (!$withdrawal) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to record withdrawal.',
+            ], 500);
+        }
 
         return response()->json([
             'success' => true,

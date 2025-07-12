@@ -50,6 +50,11 @@
                         Deposit Funds
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ Request::routeIs('transactions.index') ? 'active fw-semibold text-primary' : '' }}" href="{{ route('transactions.index') }}">
+                        My Transactions
+                    </a>
+                </li>
 
                 @auth
                     <li class="nav-item">

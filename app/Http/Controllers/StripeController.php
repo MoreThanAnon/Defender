@@ -106,6 +106,10 @@ class StripeController extends Controller
                 'return_url' => route('payment.complete'), // Provide a return URL for redirect-based methods
             ]);
 
+            if ($paymentIntent->status === 'succeeded') {
+                $this->updateDeposit($user, $request->amount);
+            }
+
             return response()->json([
                 'success' => true,
                 'client_secret' => $paymentIntent->client_secret,
