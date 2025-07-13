@@ -1,6 +1,5 @@
 @extends('layouts.app')
 @section('content')
-    <meta name="csrf-token" content="{{ csrf_token() }}">
     <script src="https://js.stripe.com/v3/"></script>
     <style>
         .StripeElement {
@@ -19,8 +18,6 @@
         }
     </style>
 <div class="container py-5">
-
-    @include('components.navbar')
 
     <div class="row justify-content-center">
         <div class="col-md-8">
