@@ -70,7 +70,7 @@
                 id="address1"
                 name="address1"
                 class="form-control @error('address1') is-invalid @enderror"
-                value="{{ old('address1', $customer->address1) }}"
+                value="{{ old('address1', optional($address)->address1) }}"
             />
             @error('address1')
                 <div class="invalid-feedback">{{ $message }}</div>
@@ -84,7 +84,7 @@
                 id="address2"
                 name="address2"
                 class="form-control @error('address2') is-invalid @enderror"
-                value="{{ old('address2', $customer->address2) }}"
+                value="{{ old('address2', optional($address)->address2) }}"
             />
             @error('address2')
                 <div class="invalid-feedback">{{ $message }}</div>
@@ -98,7 +98,7 @@
                 id="address3"
                 name="address3"
                 class="form-control @error('address3') is-invalid @enderror"
-                value="{{ old('address3', $customer->address3) }}"
+                value="{{ old('address3', optional($address)->address3) }}"
             />
             @error('address3')
                 <div class="invalid-feedback">{{ $message }}</div>
@@ -112,7 +112,7 @@
                 id="town"
                 name="town"
                 class="form-control @error('town') is-invalid @enderror"
-                value="{{ old('town', $customer->town) }}"
+                value="{{ old('town', optional($address)->city) }}"
             />
             @error('town')
                 <div class="invalid-feedback">{{ $message }}</div>
@@ -126,7 +126,7 @@
                 id="eircode"
                 name="eircode"
                 class="form-control @error('eircode') is-invalid @enderror"
-                value="{{ old('eircode', $customer->eircode) }}"
+                value="{{ old('eircode', optional($address)->eircode) }}"
             />
             @error('eircode')
                 <div class="invalid-feedback">{{ $message }}</div>
