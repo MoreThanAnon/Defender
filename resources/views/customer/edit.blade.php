@@ -2,7 +2,6 @@
 
 @section('content')
 <div class="container">
-    @include('components.navbar')
 </div>
 
 <div class="container mt-5">

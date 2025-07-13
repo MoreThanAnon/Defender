@@ -20,12 +20,15 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
+
 </head>
 
 <body>
     <div id="app">
         {{-- Optional sticky navbar if included here --}}
-        {{-- @include('components.navbar') --}}
+        @empty($hideNavbar)
+            @include('components.navbar')
+        @endempty
 
         <main class="py-4">
             @yield('content')
@@ -34,6 +37,9 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Bootstrap 5 JS Bundle -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Compiled App JS -->
+    <script src="{{ asset('js/app.js') }}"></script>
 </body>
 
 </html>

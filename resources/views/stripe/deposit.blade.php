@@ -5,7 +5,6 @@
 <script src="https://js.stripe.com/v3/"></script>
 
 <div class="container py-5">
-    @include('components.navbar')
 
     @if(!$hasDefault)
         <script> window.location.href = "{{ route('card.add') }}"; </script>

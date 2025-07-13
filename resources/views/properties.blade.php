@@ -2,7 +2,6 @@
 
 @section('content')
 <div class="container mt-5">
-    @include('components.navbar')
 
     <div class="row mb-4">
         <div class="col-md-12">

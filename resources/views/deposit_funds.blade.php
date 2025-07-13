@@ -1,12 +1,6 @@
-<!DOCTYPE html>
 @extends('layouts.app')
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Deposit Funds</title>
+@section('content')
     <meta name="csrf-token" content="{{ csrf_token() }}">
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://js.stripe.com/v3/"></script>
     <style>
         .StripeElement {
@@ -24,9 +18,8 @@
             font-size: 0.9rem;
         }
     </style>
-</head>
-<body>
 <div class="container py-5">
+
     @include('components.navbar')
 
     <div class="row justify-content-center">
@@ -42,20 +35,17 @@
                     <button type="button" id="nextButton" class="btn btn-primary w-100">Next</button>
                 </form>
             </div>
-
             <!-- Payment Method Form -->
             <div id="paymentMethodForm" style="display: none;">
                 <h2 class="mb-4 text-center">Add a Payment Method</h2>
                 <form id="payment-form" action="{{ route('stripe.storePaymentMethod') }}" method="POST">
                     @csrf
-
                     <div class="alert alert-info text-center">
                         <p>You are depositing: <strong id="displayDepositAmount"></strong></p>
                         <p>Stripe Processing Fee (2.9% + €0.30): <strong id="stripeFee"></strong></p>
                         <p>Our Fee (2.5%): <strong id="ourFee"></strong></p>
                         <p>Total Amount Charged: <strong id="totalAmount"></strong></p>
                     </div>
-
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label class="form-label">Full Name</label>
@@ -68,13 +58,11 @@
                             <div class="invalid-feedback" id="email-error">Enter a valid email address.</div>
                         </div>
                     </div>
-
                     <div class="mb-3">
                         <label class="form-label">Address Line 1</label>
                         <input type="text" id="line1" class="form-control" required>
                         <div class="invalid-feedback" id="line1-error">Address is required.</div>
                     </div>
-
                     <div class="row mb-3">
                         <div class="col-md-4">
                             <label class="form-label">City</label>
@@ -92,7 +80,6 @@
                             <div class="invalid-feedback" id="postal_code-error">Please enter a valid Eircode (e.g. D02 X285).</div>
                         </div>
                     </div>
-
                     <div class="mb-3">
                         <label class="form-label">Country</label>
                         <select id="country" class="form-control" required>
@@ -105,13 +92,11 @@
                         </select>
                         <div class="invalid-feedback" id="country-error">Please select a country.</div>
                     </div>
-
                     <div class="mb-3">
                         <label class="form-label">Card Details</label>
                         <div id="card-element" class="form-control StripeElement"></div>
                         <div id="card-errors" class="text-danger mt-2"></div>
                     </div>
-
                     <input type="hidden" name="payment_method" id="payment-method">
                     <input type="hidden" name="totalAmount" id="hiddenTotalAmount">
                     <button id="submit-button" class="btn btn-primary w-100" type="submit">Save Card</button>
@@ -120,7 +105,6 @@
         </div>
     </div>
 </div>
-
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         // Stripe Setup
@@ -242,6 +226,5 @@
         });
     });
     </script>
+@endsection
 
-</body>
-</html>
