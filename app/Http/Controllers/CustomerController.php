@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Address;
 
 class CustomerController extends Controller
 {
@@ -11,6 +12,7 @@ class CustomerController extends Controller
         $user = Auth::user();
         $id = $user->id;
         $customer = $user;
+        $address = $user->address;
 
         if ($request->isMethod('post')) {
             $request->validate([
@@ -25,9 +27,22 @@ class CustomerController extends Controller
             ]);
 
             try {
-                $customer->update($request->only([
-                    'real_name', 'email', 'address1', 'address2', 'address3', 'town', 'eircode'
-                ]));
+                $customer->update($request->only(['real_name', 'email']));
+
+                $addressData = [
+                    'address1' => $request->input('address1'),
+                    'address2' => $request->input('address2'),
+                    'address3' => $request->input('address3'),
+                    'city'     => $request->input('town'),
+                    'eircode'  => $request->input('eircode'),
+                ];
+
+                if ($address) {
+                    $address->update($addressData);
+                } else {
+                    $addressData['user_id'] = $id;
+                    $address = Address::create($addressData);
+                }
 
                 $request->session()->flash('success', 'Customer information updated successfully.');
             } catch (\Exception $e) {
@@ -35,6 +50,6 @@ class CustomerController extends Controller
             }
         }
 
-        return view('customer.edit', ['id' => $id, 'customer' => $customer]);
+        return view('customer.edit', ['id' => $id, 'customer' => $customer, 'address' => $address]);
     }
 }
