@@ -2,7 +2,6 @@
 
 @section('content')
 <div class="container mt-5">
-    @include('components.navbar')
     <div class="container mt-4 d-flex justify-content-between align-items-center">
         <h1 class="fw-bold mb-4">{{ $name ?? 'Property Title' }}</h1>
         @auth

@@ -2,7 +2,6 @@
 
 @section('content')
 <div class="container py-5">
-    @include('components.navbar')
     <div class="row justify-content-center">
         <div class="col-md-8">
             <h2 class="mb-4 text-center">Payment Method</h2>

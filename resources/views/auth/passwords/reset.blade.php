@@ -1,4 +1,5 @@
 @extends('layouts.app')
+@php($hideNavbar = true)
 
 @section('content')
 <div class="container">

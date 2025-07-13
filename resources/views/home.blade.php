@@ -2,7 +2,6 @@
 
 @section('content')
 <div class="container py-5">
-    @include('components.navbar')
 
     <div class="row g-4">
         {{-- Financial & Investment Info --}}

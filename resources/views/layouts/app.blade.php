@@ -74,7 +74,9 @@
 <body>
     <div id="app">
         {{-- Optional sticky navbar if included here --}}
-        {{-- @include('components.navbar') --}}
+        @empty($hideNavbar)
+            @include('components.navbar')
+        @endempty
 
         <main class="py-4">
             @yield('content')
