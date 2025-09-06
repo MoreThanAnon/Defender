@@ -8,7 +8,7 @@
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Defender') }}</title>
+    <title>{{ config('app.name', 'NameMeLater') }}</title>
 
     <!-- Favicon -->
     <link rel="icon" href="/favicon.ico" type="image/x-icon">

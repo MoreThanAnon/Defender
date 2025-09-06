@@ -250,7 +250,16 @@
             </div>
         </div>
     </div>
-
+@auth
+    @if(auth()->user()->hasRole('moderator') || auth()->user()->hasRole('admin'))
+        <a href="{{ route('updates.create', $id) }}" class="btn btn-sm btn-primary">Add Update</a>
+    @endif
+@endauth
+@auth
+    @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('moderator'))
+        <a href="{{ route('properties.edit', $id) }}" class="btn btn-warning">Edit Property</a>
+    @endif
+@endauth
     <!-- Map Tab -->
     <div class="tab-pane fade" id="map" role="tabpanel">
         <div class="card shadow-sm">

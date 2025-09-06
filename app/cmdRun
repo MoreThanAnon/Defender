@@ -1,1 +1,2 @@
 mklink /D c:\wamp644\www\defender\public\storage c:\wamp644\www\defender\storage\app\public
+#Edit php.ini to accept file large than 2mbs upload_max_filesize & post_max_size 

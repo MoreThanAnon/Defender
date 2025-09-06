@@ -31,6 +31,7 @@ class CreatePropertiesTable extends Migration
             $table->date('campaign_start')->nullable(); //When the campaign starts and lets people bid
             $table->date('campaign_end')->nullable();//When the campaign ends and no more bids can be placed (how do we even set this up)
             $table->integer('internal_days')->default(0); // Number of days for internal bidding
+            $table->string('cover_image')->nullable(); // <-- Add this line
             $table->timestamps();
         });
     }

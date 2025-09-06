@@ -9,7 +9,8 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\Image;
 use App\Models\Bids;
 use Carbon\Carbon;
-
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 class PropertyController extends Controller
 {
 
@@ -204,78 +205,157 @@ class PropertyController extends Controller
         ]);
     }
 
-    public function update(Request $request, $id)
-    {
-        $validatedData = $request->validate([
-            'name' => 'required|string|max:255',
-            'price' => 'required|numeric',
-            'beds' => 'required|integer',
-            'baths' => 'required|integer',
-            'size' => 'required|numeric',
-            'type' => 'required|string|max:50',
-            'berRating' => 'nullable|string|max:10',
-            'address' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
-            'daft_link' => 'nullable|url',
-            'images.*' => 'image|mimes:jpeg,png,jpg,gif,jfif|max:2048',
-            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'campaign_start' => 'nullable|date',
-            'campaign_end' => 'nullable|date',
-            'internal_days' => 'nullable|integer|min:0',
-        ]);
+public function update(Request $request, $id)
+{
+    // Helpful env logging (once is enough; comment out later)
+    Log::info('Upload env', [
+        'upload_max_filesize' => ini_get('upload_max_filesize'),
+        'post_max_size'       => ini_get('post_max_size'),
+        'max_file_uploads'    => ini_get('max_file_uploads'),
+    ]);
 
-        $property = Property::findOrFail($id);
+    $rules = [
+        'name'         => 'required|string|max:255',
+        'price'        => 'required|numeric',
+        'beds'         => 'required|integer',
+        'baths'        => 'required|integer',
+        'size'         => 'required|numeric',
+        'type'         => 'required|string|max:50',
+        'berRating'    => 'nullable|string|max:10',
+        'address'      => 'required|string|max:255',
+        'description'  => 'nullable|string',
+        'latitude'     => 'nullable|numeric',
+        'longitude'    => 'nullable|numeric',
+        'daft_link'    => 'nullable|url',
 
-        $property->ber_rating = $request->berRating ?? $property->ber_rating;
-        $property->campaign_start = $request->campaign_start;
-        $property->campaign_end = $request->campaign_end;
-        $property->internal_days = $request->internal_days ?? 0;
-        // ✅ Handle cover image deletion
-        if ($request->has('delete_cover_image')) {
-            if ($property->cover_image && Storage::disk('public')->exists($property->cover_image)) {
-                Storage::disk('public')->delete($property->cover_image);
+        // Important: declare the array itself + per-item rule
+        'images'       => 'nullable|array',
+        'images.*'     => 'file|image|mimes:jpeg,jpg,png,gif|max:2048',
+
+        // Avoid LTH/odd extensions; jpeg covers jfif anyway
+        'cover_image'  => 'nullable|file|image|mimes:jpeg,jpg,png,gif|max:20048',
+
+        'campaign_start' => 'nullable|date',
+        'campaign_end'   => 'nullable|date',
+        'internal_days'  => 'nullable|integer|min:0',
+    ];
+
+    $validator = Validator::make($request->all(), $rules);
+
+    // Add PHP-level upload error messages + file meta
+    $validator->after(function ($validator) use ($request) {
+        if ($request->hasFile('cover_image')) {
+            $f = $request->file('cover_image');
+            if (!$f->isValid()) {
+                $validator->errors()->add(
+                    'cover_image',
+                    'PHP upload error (code '.$f->getError().'): '.$f->getErrorMessage()
+                );
+            } else {
+                Log::info('cover_image meta', [
+                    'name'  => $f->getClientOriginalName(),
+                    'mime'  => $f->getMimeType(),
+                    'ext'   => $f->getClientOriginalExtension(),
+                    'size'  => $f->getSize(),
+                ]);
             }
-            $property->cover_image = null;
         }
 
-        // ✅ Handle new cover image upload
-        if ($request->hasFile('cover_image')) {
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $idx => $image) {
+                if (!$image->isValid()) {
+                    $validator->errors()->add(
+                        "images.$idx",
+                        'PHP upload error (code '.$image->getError().'): '.$image->getErrorMessage()
+                    );
+                } else {
+                    Log::info('gallery image meta', [
+                        'index' => $idx,
+                        'name'  => $image->getClientOriginalName(),
+                        'mime'  => $image->getMimeType(),
+                        'ext'   => $image->getClientOriginalExtension(),
+                        'size'  => $image->getSize(),
+                    ]);
+                }
+            }
+        }
+    });
+
+    if ($validator->fails()) {
+        // You’ll now see exactly which field/why in the error bag
+        Log::warning('Validation failed', ['errors' => $validator->errors()->toArray()]);
+        return back()->withErrors($validator)->withInput();
+    }
+
+    $validatedData = $validator->validated();
+
+    $property = Property::findOrFail($id);
+
+    // Assign fields...
+    $property->ber_rating     = $request->berRating ?? $property->ber_rating;
+    $property->campaign_start = $request->campaign_start;
+    $property->campaign_end   = $request->campaign_end;
+    $property->internal_days  = $request->internal_days ?? 0;
+    $property->name           = $validatedData['name'];
+    $property->price          = $validatedData['price'];
+    $property->beds           = $validatedData['beds'];
+    $property->baths          = $validatedData['baths'];
+    $property->size           = $validatedData['size'];
+    $property->type           = $validatedData['type'];
+    $property->address        = $validatedData['address'];
+
+    // Delete old cover if requested
+    if ($request->boolean('delete_cover_image')) {
+        if ($property->cover_image && Storage::disk('public')->exists($property->cover_image)) {
+            Storage::disk('public')->delete($property->cover_image);
+        }
+        $property->cover_image = null;
+    }
+
+    // Upload new cover
+    if ($request->hasFile('cover_image')) {
+        try {
             if ($property->cover_image && Storage::disk('public')->exists($property->cover_image)) {
                 Storage::disk('public')->delete($property->cover_image);
             }
             $coverImagePath = $request->file('cover_image')->store('properties/cover_images', 'public');
             $property->cover_image = $coverImagePath;
+        } catch (\Throwable $e) {
+            $maxSize = ini_get('upload_max_filesize');
+            $postMax = ini_get('post_max_size');
+            return back()->withErrors([
+                'cover_image' => "Cover upload failed: {$e->getMessage()} (upload_max_filesize={$maxSize}, post_max_size={$postMax})."
+            ])->withInput();
         }
-
-        $property->save();
-
-        // ✅ Handle deletion of gallery images
-        if ($request->has('delete_images')) {
-            foreach ($request->input('delete_images') as $imagePath) {
-                if (Storage::disk('public')->exists($imagePath)) {
-                    Storage::disk('public')->delete($imagePath);
-                }
-                Image::where('property_id', $id)
-                    ->where('path', $imagePath)
-                    ->delete();
-            }
-        }
-
-        // ✅ Handle new gallery image uploads
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                $path = $image->store("properties/{$id}", 'public');
-                Image::create([
-                    'property_id' => $id,
-                    'path' => $path,
-                ]);
-            }
-        }
-
-        return redirect()->route('property.show', $property->id)->with('success', 'Property updated successfully!');
     }
+
+    $property->save();
+
+    // Delete selected gallery images
+    if ($request->filled('delete_images')) {
+        foreach ($request->input('delete_images', []) as $imagePath) {
+            if (Storage::disk('public')->exists($imagePath)) {
+                Storage::disk('public')->delete($imagePath);
+            }
+            Image::where('property_id', $id)->where('path', $imagePath)->delete();
+        }
+    }
+
+    // Upload new gallery images
+    if ($request->hasFile('images')) {
+        foreach ($request->file('images') as $image) {
+            $path = $image->store("properties/{$id}", 'public');
+            Image::create([
+                'property_id' => $id,
+                'path'        => $path,
+            ]);
+        }
+    }
+
+    return redirect()
+        ->route('property.show', $property->id)
+        ->with('success', 'Property updated successfully!');
+}
 
 
     public function addToFund(Request $request, $id)

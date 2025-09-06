@@ -122,6 +122,10 @@
                             <small class="form-text text-muted">You can upload multiple images.</small>
                         </div>
 
+                        @if ($errors->has('cover_image'))
+                            <div class="alert alert-danger">{{ $errors->first('cover_image') }}</div>
+                        @endif
+
                         <button type="submit" class="btn btn-primary">Update Property</button>
                     </form>
                 </div>
