@@ -60,4 +60,8 @@ class Property extends Model
     {
         return $this->hasMany(Update::class);
     }
+    public function offerings()
+    {
+        return $this->hasMany(Offering::class);
+    }
 }

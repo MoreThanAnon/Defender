@@ -1,4 +1,5 @@
 @extends('layouts.app')
+    @include('components.adminnav') <!-- Include admin navigation (shows only to admin users) -->
 
 @section('content')
 <div class="container mt-5">

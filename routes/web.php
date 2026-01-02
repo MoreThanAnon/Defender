@@ -121,6 +121,24 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/properties', [AdminController::class, 'properties'])->name('admin.properties.index');
+
+    // NOT IN USE - placeholder routes to satisfy adminnav links (show 404 or replace with real controller actions later)
+    Route::middleware(['auth','role:admin'])->prefix('admin')->group(function () {
+        // Users list (placeholder)
+        Route::get('/users', function () {
+            abort(404); // Not in use
+        })->name('admin.users.index');
+
+        // Offerings list (placeholder)
+        Route::get('/offerings', function () {
+            abort(404); // Not in use
+        })->name('admin.offerings.index');
+
+        // Reports (placeholder)
+        Route::get('/reports', function () {
+            abort(404); // Not in use
+        })->name('admin.reports.index');
+    });
 });
 
 // Testing

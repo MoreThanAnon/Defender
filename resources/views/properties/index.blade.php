@@ -3,6 +3,7 @@
 @section('content')
 <div class="container"> <!-- Add container to limit width -->
     @include('partials.navbar') <!-- Include the navbar -->
+    @include('components.adminnav') <!-- Include admin navigation (shows only to admin users) -->
 </div>
 <div class="container mt-5">
     <h1>Properties</h1>

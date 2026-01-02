@@ -1,4 +1,5 @@
 @extends('layouts.app')
+    @include('components.adminnav') <!-- Include admin navigation (shows only to admin users) -->
 
 @section('content')
 <div class="container mt-5">
@@ -21,25 +22,50 @@
     <div class="row">
         <div class="col-lg-8">
             <!-- Image Carousel -->
-            <div id="propertyImagesCarousel" class="carousel slide mb-4" data-bs-ride="carousel" style="max-height: 450px; overflow: hidden;">
-                <div class="carousel-inner" style="height: 100%;">
+            <div id="propertyImagesCarousel" class="carousel slide mb-4" data-bs-ride="carousel" style="max-height:450px; overflow:hidden;">
+                {{-- indicators (dots) --}}
+                @if(isset($images) && count($images) > 1)
+                    <div class="carousel-indicators">
+                        @foreach($images as $idx => $img)
+                            <button type="button"
+                                    data-bs-target="#propertyImagesCarousel"
+                                    data-bs-slide-to="{{ $idx }}"
+                                    class="{{ $idx === 0 ? 'active' : '' }}"
+                                    aria-current="{{ $idx === 0 ? 'true' : 'false' }}"
+                                    aria-label="Slide {{ $idx + 1 }}"></button>
+                        @endforeach
+                    </div>
+                @endif
+
+                <div class="carousel-inner" style="height:100%;">
                     @if(isset($images) && count($images) > 0)
                         @foreach($images as $index => $image)
                             <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
-                                <img src="{{ asset('storage/' . $image->path) }}" class="d-block w-100 h-100" style="object-fit: contain;" alt="Property Image">
+                                <img src="{{ asset('storage/' . $image->path) }}"
+
+                                     class="d-block w-100"
+                                     style="max-height:450px; object-fit:cover;"
+                                     alt="Property Image {{ $index + 1 }}">
                             </div>
                         @endforeach
                     @else
                         <div class="carousel-item active">
-                            <img src="{{ asset('storage/default-placeholder.png') }}" class="d-block w-100 h-100" style="object-fit: contain;" alt="No Images Available">
+                            <img src="{{ asset('storage/default-placeholder.png') }}"
+                                 class="d-block w-100"
+                                 style="max-height:450px; object-fit:contain;"
+                                 alt="No Images Available">
                         </div>
                     @endif
                 </div>
+
+                {{-- visible prev/next controls with contrast tweaks --}}
                 <button class="carousel-control-prev" type="button" data-bs-target="#propertyImagesCarousel" data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon"></span>
+                    <span class="carousel-control-prev-icon" aria-hidden="true" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,.6)) invert(1);"></span>
+                    <span class="visually-hidden">Previous</span>
                 </button>
                 <button class="carousel-control-next" type="button" data-bs-target="#propertyImagesCarousel" data-bs-slide="next">
-                    <span class="carousel-control-next-icon"></span>
+                    <span class="carousel-control-next-icon" aria-hidden="true" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,.6)) invert(1);"></span>
+                    <span class="visually-hidden">Next</span>
                 </button>
             </div>
         </div>

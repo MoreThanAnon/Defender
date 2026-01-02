@@ -33,7 +33,7 @@ class CreatePropertiesTable extends Migration
             $table->integer('internal_days')->default(0); // Number of days for internal bidding
             $table->string('cover_image')->nullable(); // <-- Add this line
             $table->timestamps();
-        });
+        });//http://127.0.0.1/defender/public/storage/default.jpg
     }
 
     public function down()
