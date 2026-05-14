@@ -2,56 +2,37 @@
 
 namespace App\Models;
 
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Cashier\Billable;
 use Laravel\Sanctum\HasApiTokens;
-use App\Notifications\CustomVerifyEmail;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
-use App\Models\Role;
-use App\Models\Address;
-use App\Models\Investment;
-use Laravel\Cashier\Billable; // ✅ Add this
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class User extends Authenticatable implements MustVerifyEmail, JWTSubject
 {
+    use Billable;
     use HasApiTokens, HasFactory, Notifiable;
-    use Billable; // ✅ Add this to enable Cashier/Stripe features
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'name',
-        'username', 
-        'email', 
-        'password', 
-        'role', 
+        'username',
+        'email',
+        'password',
+        'role',
         'real_name',
         'funds',
         'pm_type',
         'pm_last_four',
-        'balance'
+        'balance',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
@@ -59,26 +40,12 @@ class User extends Authenticatable implements MustVerifyEmail, JWTSubject
 
     public function hasRole(string $role): bool
     {
-        // Assuming the User model has a relationship with roles
-        // Adjust the logic based on your database structure
         return $this->roles()->where('name', $role)->exists();
     }
 
     public function roles()
     {
-        // Define the relationship between User and Role
         return $this->belongsToMany(Role::class);
-    }
-
-    public function users()
-    {
-        return $this->belongsToMany(User::class);
-    }
-
-    public function userHasSufficientFunds($amount)
-    {
-        // Assuming the User model has a 'balance' attribute
-        return $this->balance >= $amount;
     }
 
     public function bids()
@@ -90,6 +57,7 @@ class User extends Authenticatable implements MustVerifyEmail, JWTSubject
     {
         return $this->hasMany(Investment::class);
     }
+
     public function deposits()
     {
         return $this->hasMany(Deposit::class);
@@ -105,21 +73,13 @@ class User extends Authenticatable implements MustVerifyEmail, JWTSubject
         return $this->hasOne(Address::class);
     }
 
-    /**
-     * Get the identifier that will be stored in the subject claim of the JWT.
-     */
     public function getJWTIdentifier()
     {
         return $this->getKey();
     }
 
-    /**
-     * Return a key value array, containing any custom claims to be added to the JWT.
-     */
     public function getJWTCustomClaims()
     {
         return [];
     }
 }
-
-

@@ -188,8 +188,13 @@
             <!-- Funds Overview -->
             <div class="card shadow-sm mb-4" id="fundsOverviewSection">
                 <div class="card-body text-center">
-                    <h5 class="card-title">Your Current Funds</h5>
-                    <p class="text-success" id="userFunds">€{{ number_format(auth()->user()->balance, 2) }}</p>
+                    @auth
+                        <h5 class="card-title">Your Current Funds</h5>
+                        <p class="text-success" id="userFunds">€{{ number_format(auth()->user()->balance, 2) }}</p>
+                    @else
+                        <h5 class="card-title">Investor Access</h5>
+                        <p class="text-muted mb-0">Log in to view your balance and place bids.</p>
+                    @endauth
                 </div>
             </div>
         </div>
@@ -276,16 +281,6 @@
             </div>
         </div>
     </div>
-@auth
-    @if(auth()->user()->hasRole('moderator') || auth()->user()->hasRole('admin'))
-        <a href="{{ route('updates.create', $id) }}" class="btn btn-sm btn-primary">Add Update</a>
-    @endif
-@endauth
-@auth
-    @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('moderator'))
-        <a href="{{ route('properties.edit', $id) }}" class="btn btn-warning">Edit Property</a>
-    @endif
-@endauth
     <!-- Map Tab -->
     <div class="tab-pane fade" id="map" role="tabpanel">
         <div class="card shadow-sm">

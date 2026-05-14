@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Investment;
 use App\Models\Property;
 
@@ -17,8 +16,6 @@ class AdminController extends Controller
         $activeLoans = Investment::where('type', 'loan')->where('status', 'active')->sum('amount');
         $paidLoans = Investment::where('type', 'loan')->where('status', 'paid')->sum('amount');
         $inactiveLoans = Investment::where('type', 'loan')->where('status', 'inactive')->sum('amount');
-
-        // You can replace with real logic later
         $avgProfit = 0;
 
         return view('admin.dashboard', compact(
@@ -32,9 +29,6 @@ class AdminController extends Controller
         ));
     }
 
-    /**
-     * Display a listing of all properties for the admin panel.
-     */
     public function properties()
     {
         $properties = Property::all();

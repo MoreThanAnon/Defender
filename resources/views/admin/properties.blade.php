@@ -7,11 +7,10 @@
             <h1>Manage Properties</h1>
         </div>
         <div class="col text-right">
-            <a href="{{ route('admin.properties.create') }}" class="btn btn-success">Create New Property</a>
+            <a href="{{ route('property.create') }}" class="btn btn-success">Create New Property</a>
         </div>
     </div>
     <hr>
-    <!-- Properties Table -->
     <table class="table table-striped">
         <thead>
             <tr>
@@ -27,16 +26,11 @@
                 <tr>
                     <td>{{ $property->id }}</td>
                     <td>{{ $property->name }}</td>
-                    <td>€{{ number_format($property->price) }}</td>
+                    <td>EUR {{ number_format($property->price, 2) }}</td>
                     <td>{{ ucfirst($property->type) }}</td>
                     <td>
                         <a href="{{ url('/properties/' . $property->id) }}" class="btn btn-primary btn-sm">View</a>
-                        <a href="{{ url('/admin/properties/' . $property->id . '/edit') }}" class="btn btn-warning btn-sm">Edit</a>
-                        <form action="{{ url('/admin/properties/' . $property->id) }}" method="POST" style="display:inline;">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                        </form>
+                        <a href="{{ route('properties.edit', $property->id) }}" class="btn btn-warning btn-sm">Edit</a>
                     </td>
                 </tr>
             @endforeach

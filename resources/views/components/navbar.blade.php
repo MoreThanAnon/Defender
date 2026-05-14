@@ -1,7 +1,6 @@
 @php
     $current = Request::path();
 @endphp
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm mb-4">
     <div class="container">
         <a class="navbar-brand fw-bold text-primary" href="{{ url('/home') }}">Defender</a>
@@ -25,7 +24,6 @@
                     </a>
                 </li>
 
-                {{-- Dropdown for "My Details" --}}
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle {{ Request::routeIs('customer.edit') || Request::routeIs('card.add') ? 'text-primary fw-semibold' : '' }}"
                        href="#" id="detailsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">

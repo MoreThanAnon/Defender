@@ -6,30 +6,23 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        if (!Schema::hasTable('bids')) { // Check if the table already exists
+        if (! Schema::hasTable('bids')) {
             Schema::create('bids', function (Blueprint $table) {
                 $table->id();
-                $table->unsignedBigInteger('property_id'); // Foreign key for the property
-                $table->unsignedBigInteger('user_id'); // Foreign key for the user
-                $table->decimal('amount', 10, 2); // Bid amount
-                $table->enum('status', ['pending', 'accepted', 'rejected'])->default('pending'); // Status of the bid
-                $table->timestamp('bid_time')->useCurrent(); // Time when the bid was made
-                $table->timestamps(); // This creates 'created_at' and 'updated_at' columns
-                // Foreign key constraints
-                $table->foreign('property_id')->references('id')->on('properties')->onDelete('cascade');
-                $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+                $table->foreignId('property_id')->nullable()->constrained()->nullOnDelete();
+                $table->foreignId('offering_id')->nullable()->constrained()->nullOnDelete();
+                $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+                $table->decimal('amount', 10, 2);
+                $table->boolean('is_local')->default(false);
+                $table->enum('status', ['pending', 'accepted', 'rejected', 'PLEDGED', 'ACCEPTED'])->default('pending');
+                $table->timestamp('bid_time')->useCurrent();
+                $table->timestamps();
             });
         }
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('bids');

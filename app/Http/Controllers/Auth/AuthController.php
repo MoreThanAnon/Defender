@@ -8,10 +8,6 @@ use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
-
-
-
-
     public function showLoginForm()
     {
         return view('auth.login');
@@ -24,7 +20,9 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        if (Auth::attempt($request->only('username', 'password'))) {
+        if (Auth::attempt($request->only('username', 'password'), $request->boolean('remember'))) {
+            $request->session()->regenerate();
+
             return redirect()->route('dashboard');
         }
 
@@ -33,14 +31,15 @@ class AuthController extends Controller
 
     public function dashboard()
     {
-        // Redirect to the main home route where all required
-        // dashboard data is prepared by the HomeController.
         return redirect()->route('home');
     }
 
-    public function logout()
+    public function logout(Request $request)
     {
         Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
         return redirect()->route('login');
     }
 }
