@@ -53,6 +53,17 @@
                                     <a href="{{ route('properties.edit', $property->id) }}" class="btn btn-outline-warning btn-sm">Edit</a>
                                     <a href="{{ route('updates.create', $property->id) }}" class="btn btn-outline-secondary btn-sm">Add Update</a>
                                     <a href="{{ route('proposals.index', $property->id) }}" class="btn btn-outline-info btn-sm">Proposals</a>
+                                    @if((int) $property->status === 1)
+                                        <form action="{{ route('properties.setStatus', ['id' => $property->id, 'status' => 2]) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            <button type="submit" class="btn btn-outline-secondary btn-sm">Deactivate</button>
+                                        </form>
+                                    @else
+                                        <form action="{{ route('properties.setStatus', ['id' => $property->id, 'status' => 1]) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            <button type="submit" class="btn btn-outline-success btn-sm">Activate</button>
+                                        </form>
+                                    @endif
                                 </td>
                             </tr>
                         @endforeach

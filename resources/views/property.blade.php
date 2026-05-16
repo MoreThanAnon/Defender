@@ -122,18 +122,20 @@
             </div>
 
             <!-- Bid Section -->
-            @if ($property_status == 1)
-                @if ($localsOnly)
+            @if (! $canBid)
                     <div class="card shadow-sm mb-4">
                         <div class="card-body text-center">
-                            <h5 class="card-title text-warning">Locals-Only Bidding</h5>
-                            <p class="text-muted">
-                                Only users from <strong>{{ $propertyRegion }}</strong> can bid until
-                                <strong>{{ \Carbon\Carbon::parse($campaignStart)->addDays($internalDays)->format('F j, Y \\a\\t H:i') }}</strong>.
+                            <h5 class="card-title text-warning">Bidding Unavailable</h5>
+                            <p class="text-muted mb-0">
+                                {{ $bidUnavailableReason ?? 'Bidding is not currently open for this property.' }}
+                                @if($localsOnly)
+                                    Only users from <strong>{{ $propertyRegion }}</strong> can bid until
+                                    <strong>{{ \Carbon\Carbon::parse($campaignStart)->addDays($internalDays)->format('F j, Y \\a\\t H:i') }}</strong>.
+                                @endif
                             </p>
                         </div>
                     </div>
-                @else
+            @else
                     <div class="card shadow-sm mb-4">
                         <div class="card-body text-center">
                             <h5 class="card-title">{{ $bids->isNotEmpty() ? 'Update your Bid' : 'Place Your Bid' }}</h5>
@@ -175,7 +177,6 @@
                             @endauth
                         </div>
                     </div>
-                @endif
             @endif
 
             <!-- Place Your Bid Section -->
@@ -412,11 +413,36 @@
                 // Optionally, update the bid amount in the form
                 document.getElementById('bidAmount').value = parseFloat(bidAmount).toFixed(2);
             } else {
-                bidMessage.innerHTML = '<div class="alert alert-danger">' + (data.message || 'An error occurred.') + '</div>';
+                if (data.maxAllowed && data.canBidMaxAllowed) {
+                    const formattedMax = formatCurrency(data.maxAllowed);
+                    bidMessage.innerHTML =
+                        '<div class="alert alert-warning">' +
+                            '<p class="mb-2">Your bid would overfund this property. The current maximum that can be added is ' + formattedMax + '.</p>' +
+                            '<p class="small mb-3">This amount may be lower by the time you click if another user bids first.</p>' +
+                            '<button type="button" class="btn btn-primary" onclick="SubmitMaxBid(' + Number(data.maxAllowed) + ')">' +
+                                'Add Max Amount' +
+                            '</button>' +
+                        '</div>';
+                } else {
+                    bidMessage.innerHTML = '<div class="alert alert-danger">' + (data.message || 'An error occurred.') + '</div>';
+                }
             }
         })
         .catch(() => {
             bidMessage.innerHTML = '<div class="alert alert-danger">An error occurred while submitting your bid.</div>';
+        });
+    }
+
+    function SubmitMaxBid(amount) {
+        const bidAmount = document.getElementById('bidAmount');
+        bidAmount.value = Number(amount).toFixed(2);
+        SubmitBid();
+    }
+
+    function formatCurrency(amount) {
+        return 'EUR ' + Number(amount).toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
         });
     }
 

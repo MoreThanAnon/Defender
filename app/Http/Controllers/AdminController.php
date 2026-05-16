@@ -58,7 +58,8 @@ class AdminController extends Controller
     public function properties()
     {
         $properties = Property::all();
+        $propertyStatuses = DB::table('properties_status')->pluck('status', 'id');
 
-        return view('admin.properties', compact('properties'));
+        return view('admin.properties', compact('properties', 'propertyStatuses'));
     }
 }

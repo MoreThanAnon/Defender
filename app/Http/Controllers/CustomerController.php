@@ -27,14 +27,23 @@ class CustomerController extends Controller
             ]);
 
             try {
-                $customer->update($request->only(['real_name', 'email']));
+                $eircode = $request->input('eircode');
+                $eircodeRegion = $eircode
+                    ? strtoupper(substr(preg_replace('/\s+/', '', $eircode), 0, 3))
+                    : null;
+
+                $customer->update([
+                    'real_name' => $request->input('real_name'),
+                    'email' => $request->input('email'),
+                    'eircode_region' => $eircodeRegion,
+                ]);
 
                 $addressData = [
                     'address1' => $request->input('address1'),
                     'address2' => $request->input('address2'),
                     'address3' => $request->input('address3'),
                     'city'     => $request->input('town'),
-                    'eircode'  => $request->input('eircode'),
+                    'eircode'  => $eircode,
                 ];
 
                 if ($address) {

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Bids;
 use App\Models\Property;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class PropertiesController extends Controller
@@ -33,6 +34,45 @@ class PropertiesController extends Controller
 
         $property = Property::findOrFail($id);
         $user = $request->user();
+
+        $propertyRegion = $property->eircode
+            ? strtoupper(substr(preg_replace('/\s+/', '', $property->eircode), 0, 3))
+            : null;
+        $userEircode = $user?->eircode_region ?: $user?->address?->eircode;
+        $userRegion = $userEircode
+            ? strtoupper(substr(preg_replace('/\s+/', '', $userEircode), 0, 3))
+            : null;
+        $campaignStart = $property->campaign_start ? Carbon::parse($property->campaign_start) : null;
+        $campaignEnd = $property->campaign_end ? Carbon::parse($property->campaign_end) : null;
+        $internalEnd = $campaignStart?->copy()->addDays(max((int) ($property->internal_days ?? 0), 0));
+        $campaignIsOpen = $property->status == 1
+            && (! $campaignStart || now()->gte($campaignStart))
+            && (! $campaignEnd || now()->lte($campaignEnd));
+        $isLocalUser = $propertyRegion && $userRegion && $propertyRegion === $userRegion;
+        $localsOnly = $campaignIsOpen && $internalEnd && now()->lt($internalEnd) && ! $isLocalUser;
+
+        if (! $campaignIsOpen) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bidding is not currently open for this property.',
+                'userbalance' => (float) $user->balance,
+                'collectiveFund' => $property->getCollectiveFunds(),
+                'fundGoal' => $property->price,
+                'userBid' => null,
+            ], 403);
+        }
+
+        if ($localsOnly) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This property is currently limited to local bidders from ' . $propertyRegion . '.',
+                'userbalance' => (float) $user->balance,
+                'collectiveFund' => $property->getCollectiveFunds(),
+                'fundGoal' => $property->price,
+                'userBid' => null,
+            ], 403);
+        }
+
         $existingBid = $property->bids()->where('user_id', $user->id)->first();
         $newBidAmount = $request->bidAmount;
 
@@ -45,14 +85,19 @@ class PropertiesController extends Controller
 
         if ($newTotal > $fundGoal) {
             $maxAllowed = $fundGoal - $currentTotal;
+            $existingBidAmount = $existingBid ? (float) $existingBid->amount : 0;
+            $additionalFundsNeeded = max(0, $maxAllowed - $existingBidAmount);
+            $canBidMaxAllowed = $maxAllowed > 0 && $user->balance >= $additionalFundsNeeded;
 
             return response()->json([
                 'success' => false,
                 'message' => 'Your bid would overfund this property. The maximum you can bid is EUR ' . number_format($maxAllowed, 2) . '.',
+                'maxAllowed' => (float) $maxAllowed,
+                'canBidMaxAllowed' => $canBidMaxAllowed,
                 'userbalance' => (float) $user->balance,
                 'collectiveFund' => $property->getCollectiveFunds(),
                 'fundGoal' => $fundGoal,
-                'userBid' => $existingBid ? $existingBid->amount : null,
+                'userBid' => $existingBidAmount ?: null,
             ]);
         }
 

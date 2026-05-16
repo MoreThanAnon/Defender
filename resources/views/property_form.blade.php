@@ -156,6 +156,7 @@
                             <label for="internal_days">Internal Days</label>
                             <input type="number" id="internal_days" name="internal_days" class="form-control"
                                    value="{{ old('internal_days', $property->internal_days ?? 0) }}" min="0">
+                            <small class="form-text text-muted">Number of days reserved for local bidders after the campaign starts.</small>
                         </div>
 
                         <button type="submit" class="btn btn-primary">{{ $isEditing ? 'Update Property' : 'Create Property' }}</button>

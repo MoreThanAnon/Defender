@@ -7,6 +7,7 @@ use App\Models\Property;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class PropertyController extends Controller
 {
@@ -36,7 +37,10 @@ class PropertyController extends Controller
         $propertyRegion = $property->eircode
             ? strtoupper(substr(preg_replace('/\s+/', '', $property->eircode), 0, 3))
             : null;
-        $userRegion = $user?->eircode_region ? strtoupper($user->eircode_region) : null;
+        $userEircode = $user?->eircode_region ?: $user?->address?->eircode;
+        $userRegion = $userEircode
+            ? strtoupper(substr(preg_replace('/\s+/', '', $userEircode), 0, 3))
+            : null;
 
         $campaignStart = $property->campaign_start ? Carbon::parse($property->campaign_start) : null;
         $campaignEnd = $property->campaign_end ? Carbon::parse($property->campaign_end) : null;
@@ -44,7 +48,23 @@ class PropertyController extends Controller
         $internalEnd = $campaignStart?->copy()->addDays($internalDays);
 
         $isLocalUser = $user && $propertyRegion && $userRegion && $propertyRegion === $userRegion;
-        $localsOnly = $property->status == 1 && $internalEnd && now()->lt($internalEnd) && ! $isLocalUser;
+        $campaignIsOpen = $property->status == 1
+            && (! $campaignStart || now()->gte($campaignStart))
+            && (! $campaignEnd || now()->lte($campaignEnd));
+        $localsOnly = $campaignIsOpen && $internalEnd && now()->lt($internalEnd) && ! $isLocalUser;
+        $canBid = $campaignIsOpen && ! $localsOnly;
+        $bidUnavailableReason = null;
+
+        if ($property->status != 1) {
+            $bidUnavailableReason = 'This property is inactive.';
+        } elseif ($campaignStart && now()->lt($campaignStart)) {
+            $bidUnavailableReason = 'Bidding has not opened yet.';
+        } elseif ($campaignEnd && now()->gt($campaignEnd)) {
+            $bidUnavailableReason = 'Bidding has ended.';
+        } elseif ($localsOnly) {
+            $bidUnavailableReason = 'This property is currently in its local bidding period.';
+        }
+
         $userBid = $user ? $property->bids()->where('user_id', $user->id)->first() : null;
         $features = is_array($property->features)
             ? $property->features
@@ -60,6 +80,8 @@ class PropertyController extends Controller
             'name' => $property->name,
             'price' => $property->price,
             'localsOnly' => $localsOnly,
+            'canBid' => $canBid,
+            'bidUnavailableReason' => $bidUnavailableReason,
             'propertyRegion' => $propertyRegion,
             'beds' => $property->beds,
             'baths' => $property->baths,
@@ -127,6 +149,7 @@ class PropertyController extends Controller
             'campaign_end' => 'nullable|date|after_or_equal:campaign_start',
             'internal_days' => 'nullable|integer|min:0',
         ]);
+        $this->validateInternalDays($request);
 
         $propertyData = $request->except('images');
 
@@ -200,6 +223,7 @@ class PropertyController extends Controller
             'campaign_end' => 'nullable|date|after_or_equal:campaign_start',
             'internal_days' => 'nullable|integer|min:0',
         ]);
+        $this->validateInternalDays($request);
 
         $property = Property::findOrFail($id);
         $property->fill([
@@ -258,5 +282,22 @@ class PropertyController extends Controller
         return redirect()
             ->route('property.show', $property->id)
             ->with('success', 'Property updated successfully!');
+    }
+
+    private function validateInternalDays(Request $request): void
+    {
+        if (! $request->filled(['campaign_start', 'campaign_end']) || ! $request->filled('internal_days')) {
+            return;
+        }
+
+        $campaignStart = Carbon::parse($request->campaign_start);
+        $campaignEnd = Carbon::parse($request->campaign_end);
+        $campaignDays = $campaignStart->diffInDays($campaignEnd);
+
+        if ((int) $request->internal_days > $campaignDays) {
+            throw ValidationException::withMessages([
+                'internal_days' => 'Internal days cannot be longer than the full campaign length.',
+            ]);
+        }
     }
 }
