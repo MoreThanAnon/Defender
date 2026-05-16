@@ -24,9 +24,9 @@
             <!-- Image Carousel -->
             <div id="propertyImagesCarousel" class="carousel slide mb-4" data-bs-ride="carousel" style="max-height:450px; overflow:hidden;">
                 {{-- indicators (dots) --}}
-                @if(isset($images) && count($images) > 1)
+                @if(isset($imagePaths) && count($imagePaths) > 1)
                     <div class="carousel-indicators">
-                        @foreach($images as $idx => $img)
+                        @foreach($imagePaths as $idx => $imagePath)
                             <button type="button"
                                     data-bs-target="#propertyImagesCarousel"
                                     data-bs-slide-to="{{ $idx }}"
@@ -38,10 +38,10 @@
                 @endif
 
                 <div class="carousel-inner" style="height:100%;">
-                    @if(isset($images) && count($images) > 0)
-                        @foreach($images as $index => $image)
+                    @if(isset($imagePaths) && count($imagePaths) > 0)
+                        @foreach($imagePaths as $index => $imagePath)
                             <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
-                                <img src="{{ asset('storage/' . $image->path) }}"
+                                <img src="{{ asset('storage/' . $imagePath) }}"
 
                                      class="d-block w-100"
                                      style="max-height:450px; object-fit:cover;"
@@ -50,7 +50,7 @@
                         @endforeach
                     @else
                         <div class="carousel-item active">
-                            <img src="{{ asset('storage/default-placeholder.png') }}"
+                            <img src="{{ asset('storage/default.jpg') }}"
                                  class="d-block w-100"
                                  style="max-height:450px; object-fit:contain;"
                                  alt="No Images Available">

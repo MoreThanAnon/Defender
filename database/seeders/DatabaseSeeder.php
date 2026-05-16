@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
 
+        $this->call(PropertyStatusSeeder::class);
         $this->call(PropertiesTableSeeder::class);
         $this->call(EircodeAddressesTableSeeder::class);
 

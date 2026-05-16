@@ -40,7 +40,7 @@ class User extends Authenticatable implements MustVerifyEmail, JWTSubject
 
     public function hasRole(string $role): bool
     {
-        return $this->roles()->where('name', $role)->exists();
+        return $this->role === $role;
     }
 
     public function roles()

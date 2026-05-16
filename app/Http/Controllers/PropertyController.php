@@ -49,6 +49,11 @@ class PropertyController extends Controller
         $features = is_array($property->features)
             ? $property->features
             : array_filter(array_map('trim', explode(',', (string) $property->features)));
+        $imagePaths = collect([$property->cover_image])
+            ->merge($property->images->pluck('path'))
+            ->filter()
+            ->unique()
+            ->values();
 
         return view('property', [
             'id' => $property->id,
@@ -76,6 +81,7 @@ class PropertyController extends Controller
             'userBid' => $userBid,
             'bids' => $property->bids()->get(),
             'images' => $property->images,
+            'imagePaths' => $imagePaths,
             'updates' => $property->updates,
             'property_status' => $property->status,
             'campaign_start' => $property->campaign_start,
@@ -106,7 +112,7 @@ class PropertyController extends Controller
             'baths' => 'required|integer',
             'size' => 'required|numeric',
             'type' => 'required|string|max:255',
-            'ber_rating' => 'required|string|max:255',
+            'ber_rating' => 'required|string|max:10',
             'address' => 'required|string',
             'eircode' => 'required|string|max:20',
             'description' => 'required|string',
@@ -179,7 +185,7 @@ class PropertyController extends Controller
             'baths' => 'required|integer',
             'size' => 'required|numeric',
             'type' => 'required|string|max:50',
-            'berRating' => 'nullable|string|max:10',
+            'ber_rating' => 'required|string|max:10',
             'address' => 'required|string|max:255',
             'eircode' => 'nullable|string|max:20',
             'description' => 'required|string',
@@ -203,7 +209,7 @@ class PropertyController extends Controller
             'baths' => $validatedData['baths'],
             'size' => $validatedData['size'],
             'type' => $validatedData['type'],
-            'ber_rating' => $validatedData['berRating'] ?? null,
+            'ber_rating' => $validatedData['ber_rating'],
             'address' => $validatedData['address'],
             'eircode' => $validatedData['eircode'] ?? null,
             'description' => $validatedData['description'],

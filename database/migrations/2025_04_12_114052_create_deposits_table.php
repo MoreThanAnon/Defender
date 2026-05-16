@@ -17,7 +17,8 @@ return new class extends Migration
             $table->decimal('gross_amount', 10, 2); // Gross amount of the deposit
             $table->decimal('site_fee', 10, 2);     // Site fee charged on the deposit
             $table->decimal('net_amount', 10, 2);   // Net amount after site fee
-            $table->timestamps(); 
+            $table->timestamp('created_at')->useCurrent();
+
         });
     }
 
