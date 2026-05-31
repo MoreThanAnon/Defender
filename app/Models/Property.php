@@ -52,7 +52,7 @@ class Property extends Model
 
     public function bids()
     {
-        return $this->hasMany(Bids::class, 'property_id');
+        return $this->hasMany(Bid::class, 'property_id');
     }
 
     public function investments()

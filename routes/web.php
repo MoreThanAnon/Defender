@@ -16,6 +16,7 @@ use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UpdateController;
 use App\Http\Controllers\WithdrawalController;
+use App\Http\Controllers\DecidimController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -40,6 +41,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/dashboard', [AuthController::class, 'dashboard'])->name('dashboard');
     Route::get('/home', [HomeController::class, 'index'])->name('home');
+    Route::post('/decidim/sync-offering/{offering}', [DecidimController::class, 'syncOffering'])->name('decidim.sync');
 
     Route::get('/email/verify', fn () => view('auth.verify'))->name('verification.notice');
     Route::post('/email/verification-notification', function (Request $request) {

@@ -53,6 +53,10 @@ class EircodeAddressesTableSeeder extends Seeder
             ],
         ];
 
-        DB::table('eircode_addresses')->insert($eircodeAddresses);
+        DB::table('eircode_addresses')->upsert(
+            $eircodeAddresses,
+            ['eircode'],
+            ['address_line_1', 'address_line_2', 'town_city', 'county', 'latitude', 'longitude', 'alias', 'boundary_data', 'building_info']
+        );
     }
 }

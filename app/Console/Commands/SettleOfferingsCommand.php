@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Actions\Offerings\SettleOffering;
 use App\Models\EquityClass;
 use App\Models\Offering;
+use App\Services\DecidimIntegrationService;
 use App\Services\EquityAllocationService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -31,6 +32,7 @@ class SettleOfferingsCommand extends Command
         }
 
         $svc = new EquityAllocationService();
+        $decidim = new DecidimIntegrationService();
 
         foreach ($offerings as $offering) {
             $this->info("Settling offering: {$offering->id} - {$offering->name}");
@@ -44,6 +46,13 @@ class SettleOfferingsCommand extends Command
                 $settler = new SettleOffering($svc);
                 $settler->handle($offering, $equityClass->id, null);
                 $this->info("Offering {$offering->id} settled.");
+
+                try {
+                    $decidim->syncOfferingGovernance($offering);
+                    $this->info("Offering {$offering->id} synced to Decidim.");
+                } catch (\Throwable $e) {
+                    $this->warn("Decidim sync failed for offering {$offering->id}: " . $e->getMessage());
+                }
             } catch (\Throwable $e) {
                 $this->error("Failed to settle offering {$offering->id}: " . $e->getMessage());
             }

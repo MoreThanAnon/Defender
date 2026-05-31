@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 // use App\Models\Deposits;
 use App\Models\withdrawal;
 use App\Models\User;
-use App\Models\Bids;
+use App\Models\Bid;
 use App\Models\Investment;
 
 class HomeController extends Controller
@@ -24,7 +24,7 @@ class HomeController extends Controller
         $totalDeposits = Deposit::where('user_id', $auth)->sum('net_amount');
         $totalWithdrawals = withdrawal::where('user_id', $auth)->sum('net_amount');
 
-        $totalInvested = Bids::where('user_id', $auth)
+        $totalInvested = Bid::where('user_id', $auth)
             ->where('status', 'complete')
             ->sum('amount');
         $principalRepaid = 2057.96;

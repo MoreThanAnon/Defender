@@ -4,6 +4,7 @@ namespace App\Actions\Offerings;
 
 use App\Models\Bid;
 use App\Models\EquityPosition;
+use App\Models\FundingEvent;
 use App\Models\LoanNote;
 use App\Models\Offering;
 use App\Services\EquityAllocationService;
@@ -52,6 +53,15 @@ class SettleOffering
                 'locked_until' => null,
             ]);
 
+            FundingEvent::create([
+                'offering_id' => $offering->id,
+                'event_type' => 'equity.org_reserve',
+                'equity_pct' => $result['org_equity_pct'],
+                'metadata' => [
+                    'source' => 'ORG_RESERVE',
+                ],
+            ]);
+
             foreach ($result['investor_equity'] as $userId => $pct) {
                 EquityPosition::create([
                     'offering_id' => $offering->id,
@@ -60,6 +70,16 @@ class SettleOffering
                     'holder_type' => 'USER',
                     'pct_ownership' => $pct,
                     'source' => 'INVESTOR_POOL',
+                ]);
+
+                FundingEvent::create([
+                    'offering_id' => $offering->id,
+                    'user_id' => $userId,
+                    'event_type' => 'equity.allocated',
+                    'equity_pct' => $pct,
+                    'metadata' => [
+                        'source' => 'INVESTOR_POOL',
+                    ],
                 ]);
             }
 
@@ -72,6 +92,15 @@ class SettleOffering
                     'pct_ownership' => $result['unallocated_equity_pct'],
                     'source' => 'INVESTOR_POOL',
                 ]);
+
+                FundingEvent::create([
+                    'offering_id' => $offering->id,
+                    'event_type' => 'equity.treasury',
+                    'equity_pct' => $result['unallocated_equity_pct'],
+                    'metadata' => [
+                        'source' => 'INVESTOR_POOL',
+                    ],
+                ]);
             }
 
             foreach ($result['loan_notes'] as $userId => $principal) {
@@ -83,7 +112,29 @@ class SettleOffering
                     'term_months' => 36,
                     'status' => 'ACTIVE',
                 ]);
+
+                FundingEvent::create([
+                    'offering_id' => $offering->id,
+                    'user_id' => $userId,
+                    'event_type' => 'loan_note.created',
+                    'amount' => $principal,
+                    'metadata' => [
+                        'interest_rate_bp' => 600,
+                        'term_months' => 36,
+                    ],
+                ]);
             }
+
+            FundingEvent::create([
+                'offering_id' => $offering->id,
+                'event_type' => 'offering.settled',
+                'metadata' => [
+                    'org_equity_pct' => $result['org_equity_pct'],
+                    'investor_equity' => $result['investor_equity'],
+                    'unallocated_equity_pct' => $result['unallocated_equity_pct'],
+                    'loan_notes' => $result['loan_notes'],
+                ],
+            ]);
 
             Bid::where('offering_id', $offering->id)->update(['status' => 'ACCEPTED']);
             $offering->update(['status' => 'SETTLED']);

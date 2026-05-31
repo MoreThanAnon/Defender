@@ -18,27 +18,20 @@ class DatabaseSeeder extends Seeder
         $this->call(PropertyStatusSeeder::class);
         $this->call(PropertiesTableSeeder::class);
         $this->call(EircodeAddressesTableSeeder::class);
+        $this->call(AdminSeeder::class);
 
-        // Roles
-        $adminRole = Role::firstOrCreate(['name' => 'admin']);
         $userRole = Role::firstOrCreate(['name' => 'user']);
 
-        // Create an admin user and assign role
-        $admin = User::create([
-            'username' => 'anon',
-            'email' => 'anon@anon.com',
-            'password' => bcrypt('password'),
-            'role' => 'admin',
-        ]);
-        $admin->roles()->attach($adminRole->id);
-
         // Create a regular user and assign role
-        $user = User::create([
-            'username' => 'Regular User',
-            'email' => 'user@example.com',
-            'password' => bcrypt('password'),
-            'role' => 'user'
-        ]);
-        $user->roles()->attach($userRole->id);
+        $user = User::updateOrCreate(
+            ['email' => 'user@example.com'],
+            [
+                'username' => 'Regular User',
+                'email' => 'user@example.com',
+                'password' => bcrypt('password'),
+                'role' => 'user',
+            ]
+        );
+        $user->roles()->syncWithoutDetaching([$userRole->id]);
     }
 }

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Bids;
+use App\Models\Bid;
 use App\Models\Property;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -175,7 +175,7 @@ class PropertiesController extends Controller
     public function removeBid($id)
     {
         $user = auth()->user();
-        $existingBid = Bids::where('property_id', $id)
+        $existingBid = Bid::where('property_id', $id)
             ->where('user_id', $user->id)
             ->first();
 
