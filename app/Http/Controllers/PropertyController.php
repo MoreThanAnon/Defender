@@ -117,6 +117,24 @@ class PropertyController extends Controller
         ]);
     }
 
+    public function fundingStatus($id)
+    {
+        $property = Property::findOrFail($id);
+        $fundGoal = max((float) ($property->price ?? 0), 0);
+        $collectiveFund = (float) $property->getCollectiveFunds();
+        $percentage = $fundGoal > 0
+            ? round(min(100, ($collectiveFund / $fundGoal) * 100), 2)
+            : 0.0;
+
+        return response()->json([
+            'collectiveFund' => $collectiveFund,
+            'fundGoal' => $fundGoal,
+            'percentage' => $percentage,
+            'propertyStatus' => $property->status,
+            'updatedAt' => now()->toIso8601String(),
+        ]);
+    }
+
     public function create()
     {
         return view('property_form', [

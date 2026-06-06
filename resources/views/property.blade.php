@@ -362,6 +362,57 @@
         tooltips.map(t => new bootstrap.Tooltip(t));
     });
 
+    const fundingStatusUrl = @json(route('properties.fundingStatus', $id));
+
+    function updateFundingProgress(data, highlight = false) {
+        const progressBar = document.getElementById('fundingProgressBar');
+        const progressText = document.getElementById('fundingProgressText');
+
+        if (!progressBar || !progressText || !data) return;
+
+        const fundGoal = Number(data.fundGoal || 0);
+        const collectiveFund = Number(data.collectiveFund || 0);
+        const percent = Number.isFinite(Number(data.percentage))
+            ? Number(data.percentage)
+            : (fundGoal > 0 ? Math.round((collectiveFund / fundGoal) * 10000) / 100 : 0);
+
+        progressBar.style.width = Math.min(100, Math.max(0, percent)) + '%';
+        progressBar.textContent = percent + '%';
+        progressBar.setAttribute('aria-valuenow', percent);
+        progressText.textContent =
+            '\u20ac' + collectiveFund.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) +
+            ' raised of \u20ac' + fundGoal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+        if (highlight) {
+            highlightUpdate(progressBar);
+            highlightUpdate(progressText);
+        }
+    }
+
+    function pollFundingProgress() {
+        if (document.hidden) return;
+
+        fetch(fundingStatusUrl, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            cache: 'no-store'
+        })
+        .then(response => response.ok ? response.json() : Promise.reject())
+        .then(data => updateFundingProgress(data))
+        .catch(() => {
+            // Keep the last visible value if a temporary request fails.
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        pollFundingProgress();
+        setInterval(pollFundingProgress, 3000);
+        document.addEventListener('visibilitychange', pollFundingProgress);
+    });
+
     function SubmitBid() {
         const form = document.getElementById('bidForm');
         const bidAmount = document.getElementById('bidAmount').value;
@@ -390,24 +441,13 @@
             if (data.success) {
                 bidMessage.innerHTML = '<div class="alert alert-success">Your bid has been submitted successfully.</div>';
 
-                // Update Funding Progress
-                const progressBar = document.getElementById('fundingProgressBar');
-                const progressText = document.getElementById('fundingProgressText');
                 const userFunds = document.getElementById('userFunds');
 
-                const percent = Math.round((data.collectiveFund / data.fundGoal) * 10000) / 100;
-                progressBar.style.width = percent + '%';
-                progressBar.textContent = percent + '%';
-                progressBar.setAttribute('aria-valuenow', percent);
-                progressText.textContent =
-                    '€' + Number(data.collectiveFund).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) +
-                    ' raised of €' + Number(data.fundGoal).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                updateFundingProgress(data, true);
                 userFunds.textContent =
-                    '€' + Number(data.userbalance).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                    '\u20ac' + Number(data.userbalance).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
                 // Highlight updates
-                highlightUpdate(progressBar);
-                highlightUpdate(progressText);
                 highlightUpdate(userFunds);
 
                 // Optionally, update the bid amount in the form

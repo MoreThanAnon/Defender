@@ -27,5 +27,13 @@ class PropertyStatusSeeder extends Seeder
                 'description' => 'Hidden from public listings and closed to bidding.',
             ]
         );
+
+        DB::table('properties_status')->updateOrInsert(
+            ['id' => '3'],
+            [
+                'status' => 'Funded',
+                'description' => 'Funding target reached and property funding records have been resolved.',
+            ]
+        );
     }
 }

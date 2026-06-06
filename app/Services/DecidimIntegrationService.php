@@ -37,14 +37,32 @@ class DecidimIntegrationService
     public function buildOfferingPayload(Offering $offering): array
     {
         $equityPositions = $offering->equityPositions()->with('holder')->get()->map(function ($position) {
+            $role = $position->position_type === 'ORG_RESERVE' ? 'org_steward' : 'local_equity_voter';
+            $canVote = $role === 'local_equity_voter' && (bool) $position->can_vote;
+
             return [
-                'holder_type' => $position->holder_type,
-                'holder_user_id' => $position->holder_user_id,
+                'offering_id' => $position->offering_id,
+                'investor_id' => $position->holder_user_id,
+                'decidim_user_id' => $position->holder_user_id ? (string) $position->holder_user_id : null,
+                'role' => $role,
+                'can_vote' => $canVote,
+                'voting_bp' => $canVote ? (int) $position->voting_bp : 0,
+                'voting_scope' => $canVote ? 'ordinary_property_control' : 'reserved_matter_only',
                 'holder_name' => $position->holder?->username,
-                'pct_ownership' => (string) $position->pct_ownership,
-                'source' => $position->source,
-                'equity_class' => $position->equityClass?->code,
-                'voting_rights' => $position->equityClass?->voting_rights,
+            ];
+        })->all();
+
+        $loanNoteParticipants = $offering->loanNotes()->get()->map(function ($note) use ($offering) {
+            $investorId = $note->investor_id ?: $note->lender_user_id;
+
+            return [
+                'offering_id' => $offering->id,
+                'investor_id' => $investorId,
+                'decidim_user_id' => $investorId ? (string) $investorId : null,
+                'role' => 'non_voting_lender',
+                'can_vote' => false,
+                'voting_bp' => 0,
+                'voting_scope' => $note->voting_scope ?: 'debt_protective_only',
             ];
         })->all();
 
@@ -54,7 +72,7 @@ class DecidimIntegrationService
             'property_id' => $offering->property_id,
             'property_name' => $offering->property?->name,
             'campaign_end' => optional($offering->campaign_end)->toIso8601String(),
-            'equity_positions' => $equityPositions,
+            'participants' => array_values(array_merge($equityPositions, $loanNoteParticipants)),
             'decidim_space_id' => Config::get('decidim.space_id'),
             'decidim_assembly_id' => Config::get('decidim.assembly_id'),
         ];

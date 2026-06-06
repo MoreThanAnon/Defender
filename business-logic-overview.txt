@@ -1,0 +1,173 @@
+Business Logic Overview
+=======================
+
+This document describes how the current application handles the process from a property offering starting to campaign close, through funding, equity distribution, and loan note creation.
+
+The goal is to explain the business flow in simple terms, show the main formulas used, include key use cases, and note what is covered and what is not yet implemented.
+
+1. Offering setup and funding campaign
+--------------------------------------
+
+- A property offering is created with a target amount to raise (`target_raise`).
+- The offering has statuses: `DRAFT`, `OPEN`, `CLOSED`, `SETTLED`, `CANCELLED`.
+- It also has an organization reserve percentage(`org_reserve_pct`), typically 10% by default.
+- Investors place bids on the offering. Each bid includes:
+  - `amount` (money invested)
+  - `is_local` flag (local investors are treated as equity contributors)
+  - `status` such as `PLEDGED` or `ACCEPTED`
+
+2. Campaign close and settlement condition
+------------------------------------------
+
+The offering is eligible for settlement when:
+- the offering status is `CLOSED`
+- the campaign end timestamp has passed
+- the sum of bid amounts for bids with status `PLEDGED` or `ACCEPTED` is greater than or equal to `target_raise`
+
+3. What happens when the offering settles
+-----------------------------------------
+
+When settlement runs, the system does the following:
+
+- Collects all valid bids for the offering.
+- Converts each bid amount into integer cents.
+- Splits bids into two categories:
+  - `local` bids (equity investors)
+  - `non-local` bids (loan investors)
+
+Local bids compete for equity. Non-local bids become loan notes.
+
+4. Equity allocation formulas
+-----------------------------
+
+The share of equity is computed in basis points (bp):
+- 1 bp = 0.01%
+- 10,000 bp = 100%
+
+Key formulas:
+
+- `org_equity_pct = orgReservePct`
+- `investor_pool_pct = 100% - org_equity_pct`
+
+In basis points:
+- `org_bp = round(orgReservePct * 100)`
+- `pool_bp_total = 10000 - org_bp`
+- `step_bp = 1` (default precision is 0.01%)
+- `steps_total = pool_bp_total / step_bp`
+
+For each local investor:
+- `local_amount_cents` = amount invested by that investor in cents
+- `total_local_cents` = sum of all local amounts in cents
+
+Then allocate discrete steps:
+- `numerator = local_amount_cents * steps_total`
+- `floor_steps = floor(numerator / total_local_cents)`
+- `remainder = numerator - floor_steps * total_local_cents`
+
+Next, distribute any leftover steps to the investors with the largest remainder values.
+
+Finally:
+- `investor_equity_bp = floor_steps * step_bp`
+- `investor_equity_pct = investor_equity_bp / 100`
+
+The unallocated equity is:
+- `unallocated_bp = pool_bp_total - sum(investor_equity_bp)`
+- `unallocated_equity_pct = unallocated_bp / 100`
+
+5. Resulting records created
+----------------------------
+
+On settlement, the application creates:
+
+- One `EquityPosition` for the organization reserve.
+- One `EquityPosition` for each local investor with their percentage.
+- One `TREASURY` `EquityPosition` if any investor pool equity remains unallocated.
+- One `LoanNote` for each non-local investor.
+- A final offering status update to `SETTLED`.
+- Several `FundingEvent` records for tracking business actions:
+  - `equity.org_reserve`
+  - `equity.allocated`
+  - `equity.treasury`
+  - `loan_note.created`
+  - `offering.settled`
+
+6. What is covered by the current flow
+--------------------------------------
+
+Covered:
+- Offerings can be marked settled only after funding conditions are met.
+- Local investors receive equity based on their share of local funding.
+- The org reserve share is fixed and preserved.
+- Non-local investors receive loan notes with a defined principal and terms.
+- Settlement data is stored as equity positions and loan notes.
+- A record of funding events is created for business auditing.
+- Decidim integration is started with a service and route to sync offering governance data.
+
+7. What is not covered or needs further work
+--------------------------------------------
+
+Not fully covered:
+- The exact business rules for overfunding or excess capital are not implemented.
+- There is no refund logic for bids above the target or for failed campaigns.
+- The current loan note logic creates notes but does not manage repayments, interest accrual, or amortization.
+- Transfer restrictions, voting rights implementation, and tokenized equity transfer are not enforced.
+- Full Decidim governance workflow is not implemented: only a sync payload skeleton exists.
+- No detailed payment capture, escrow, or settlement of actual money movements is included here.
+- There is no legal entity split between property ownership and business control beyond equity positions.
+
+8. Example use cases
+--------------------
+
+Use case 1: One person tries to buy it all
+- If a single local investor bids the entire target amount, that investor will get nearly the entire investor pool equity.
+- The org still keeps its reserve percentage.
+- Example formula:
+  - org_reserve_pct = 10%
+  - investor_pool_pct = 90%
+  - one investor contributes 100% of the local pool
+  - investor receives roughly 90% equity, depending on rounding and step distribution
+
+Use case 2: Multiple local investors share equity
+- Local bid sizes are compared proportionally.
+- Equity is allocated using largest-remainder rounding to keep the total within the available pool.
+- Small investors may end up with 0.01% increments depending on the precision step.
+
+Use case 3: All bids are non-local
+- No local equity is allocated.
+- The org gets its reserve share.
+- The remaining investor pool share stays unallocated.
+- Each non-local bidder receives a loan note instead of equity.
+
+Use case 4: Mixed local and non-local bids
+- Local bidders compete for equity.
+- Non-local bidders become loan note holders.
+- The system records both equity positions and loan notes for the same offering.
+
+Use case 5: Campaign closes but funding target is not reached
+- Settlement does not run.
+- The offering stays in `CLOSED` state until the funding condition is met or it is cancelled.
+
+9. Business logic summary
+-------------------------
+
+The current application implements a two-track financing model:
+- Equity track for local investors
+- Loan track for non-local investors
+
+Main idea:
+- The business keeps a fixed ownership reserve.
+- Equity is shared among local participants proportionally.
+- Non-local capital is treated as debt.
+- The process stops at settlement, leaving detailed repayment and governance as future work.
+
+10. Recommended next steps for full production readiness
+-------------------------------------------------------
+
+- Add refund handling and overfunding rules.
+- Add loan repayment schedules, status updates, and interest accounting.
+- Implement governance and voting rights logic more fully.
+- Build actual Decidim integration endpoints and sync flows.
+- Add business audit reports for payments, equity issuance, loan issuance, and treasury holdings.
+- Validate campaign cancellation, partial close, and bid rollback scenarios.
+
+End of document.

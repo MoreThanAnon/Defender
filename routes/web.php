@@ -13,6 +13,7 @@ use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\ProposalController;
 use App\Http\Controllers\StripeController;
 use App\Http\Controllers\StripeWebhookController;
+use App\Http\Controllers\TestRunnerController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UpdateController;
 use App\Http\Controllers\WithdrawalController;
@@ -82,6 +83,7 @@ Route::prefix('properties')->group(function () {
     Route::get('/', [PropertiesController::class, 'index'])->name('properties.index');
     Route::post('/{id}/bid', [PropertiesController::class, 'placeBid'])->middleware('auth')->name('properties.placeBid');
     Route::post('/{id}/bid/remove', [PropertiesController::class, 'removeBid'])->middleware('auth')->name('properties.removeBid');
+    Route::get('/{id}/funding-status', [PropertyController::class, 'fundingStatus'])->name('properties.fundingStatus');
     Route::get('/{id}', [PropertyController::class, 'show'])->name('property.show');
 
     Route::get('/{property}/proposals', [ProposalController::class, 'index'])->name('proposals.index');
@@ -100,7 +102,11 @@ Route::prefix('properties')->group(function () {
 });
 
 Route::middleware(['auth', 'role:admin,moderator'])->group(function () {
-
+    Route::prefix('admin')->group(function () {
+        Route::get('/users', [AdminController::class, 'users'])->name('admin.users.index');
+        Route::post('/act-as', [AdminController::class, 'impersonate'])->name('admin.impersonate');
+        Route::post('/stop-impersonating', [AdminController::class, 'stopImpersonating'])->name('admin.impersonate.stop');
+    });
 });
 
 Route::get('/proposals/{proposal}', [ProposalController::class, 'show'])->name('proposals.show');
@@ -110,6 +116,12 @@ Route::delete('/proposals/{proposal}', [ProposalController::class, 'destroy'])->
 Route::post('/proposals/{proposal}/vote', [ProposalController::class, 'vote'])->name('proposals.vote');
 
 Route::post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook']);
+
+Route::prefix('test-runner')->name('test-runner.')->group(function () {
+    Route::get('/', [TestRunnerController::class, 'index'])->name('index');
+    Route::post('/purchase-simulation', [TestRunnerController::class, 'startPurchaseSimulation'])->name('purchase-simulation.start');
+    Route::get('/purchase-simulation/{runId}', [TestRunnerController::class, 'purchaseSimulationStatus'])->name('purchase-simulation.status');
+});
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');

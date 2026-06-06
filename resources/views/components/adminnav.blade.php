@@ -1,10 +1,16 @@
 @auth
-    @if (auth()->user()->hasRole('admin'))
+    @php
+        $impersonator = session()->has('impersonator_id') ? \App\Models\User::find(session('impersonator_id')) : null;
+        $adminUser = $impersonator ?: auth()->user();
+    @endphp
+
+    @if ($adminUser && $adminUser->hasRole('admin'))
         <nav class="admin-nav">
             <ul class="nav">
                 <li class="nav-item"><a class="nav-link" href="{{ route('admin.dashboard') }}">Admin Dashboard</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ route('admin.properties.index') }}">Properties</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ route('property.create') }}">Create Property</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ route('admin.users.index') }}">Act as User</a></li>
             </ul>
         </nav>
     @endif
@@ -18,7 +24,7 @@
             $propertyId = request()->route(param: 'id') ?? optional(request()->route('property'))->id;
         @endphp
 
-        @if($propertyId && auth()->check() && (auth()->user()->hasRole('admin') || auth()->user()->hasRole('moderator')))
+        @if($propertyId && auth()->check() && $adminUser && ($adminUser->hasRole('admin') || $adminUser->hasRole('moderator')))
             <li class="nav-item">
                 <a
                   class="nav-link {{ request()->routeIs('properties.edit') && (int)request()->route('id') === (int)$propertyId ? 'active' : '' }}"

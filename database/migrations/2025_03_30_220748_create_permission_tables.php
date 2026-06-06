@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class CreatePermissionTables extends Migration
@@ -47,14 +48,16 @@ class CreatePermissionTables extends Migration
             });
         }
 
-        Schema::table('properties', function (Blueprint $table) {
-            if (Schema::hasColumn('properties', 'latitude')) {
-                $table->decimal('latitude', 10, 8)->nullable()->change();
-            }
-            if (Schema::hasColumn('properties', 'longitude')) {
-                $table->decimal('longitude', 11, 8)->nullable()->change();
-            }
-        });
+        if (DB::getDriverName() !== 'sqlite') {
+            Schema::table('properties', function (Blueprint $table) {
+                if (Schema::hasColumn('properties', 'latitude')) {
+                    $table->decimal('latitude', 10, 8)->nullable()->change();
+                }
+                if (Schema::hasColumn('properties', 'longitude')) {
+                    $table->decimal('longitude', 11, 8)->nullable()->change();
+                }
+            });
+        }
     }
 
     /**

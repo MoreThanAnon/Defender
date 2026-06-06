@@ -23,6 +23,16 @@ a {
     letter-spacing: 0.5px;
 }
 
+.navbar .dropdown:focus-within > .dropdown-menu {
+    display: block;
+}
+
+@media (hover: hover) {
+    .navbar .dropdown:hover > .dropdown-menu {
+        display: block;
+    }
+}
+
 .card {
     border: none;
     border-radius: 0.75rem;

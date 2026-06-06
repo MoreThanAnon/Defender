@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
         $this->call(PropertiesTableSeeder::class);
         $this->call(EircodeAddressesTableSeeder::class);
         $this->call(AdminSeeder::class);
+        $this->call(DefenderOrgStewardSeeder::class);
 
         $userRole = Role::firstOrCreate(['name' => 'user']);
 

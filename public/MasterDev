@@ -1,3 +1,7 @@
 http://127.0.0.1/defender/public/login
 npm run dev
 php artisan db:seed
+
+Username and password for admin:
+admin
+admin

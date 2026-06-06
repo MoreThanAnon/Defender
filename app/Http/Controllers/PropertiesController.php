@@ -127,9 +127,19 @@ class PropertiesController extends Controller
             }
 
             $user->balance -= $difference;
+            $user->funds = max(0, (float) $user->funds - $difference);
             $user->save();
 
             $existingBid->amount = $newBidAmount;
+            $existingBid->original_amount_cents = (int) round($newBidAmount * 100);
+            $existingBid->is_local = $isLocalUser;
+            $existingBid->is_local_at_bid_time = $isLocalUser;
+            $existingBid->local_eligibility_reason = [
+                'type' => 'property_eircode_region',
+                'property_region' => $propertyRegion,
+                'user_region' => $userRegion,
+            ];
+            $existingBid->local_area_version = $propertyRegion;
             $existingBid->save();
 
             return response()->json([
@@ -154,11 +164,21 @@ class PropertiesController extends Controller
         }
 
         $user->balance -= $newBidAmount;
+        $user->funds = max(0, (float) $user->funds - $newBidAmount);
         $user->save();
 
         $property->bids()->create([
             'user_id' => $user->id,
             'amount' => $newBidAmount,
+            'original_amount_cents' => (int) round($newBidAmount * 100),
+            'is_local' => $isLocalUser,
+            'is_local_at_bid_time' => $isLocalUser,
+            'local_eligibility_reason' => [
+                'type' => 'property_eircode_region',
+                'property_region' => $propertyRegion,
+                'user_region' => $userRegion,
+            ],
+            'local_area_version' => $propertyRegion,
             'status' => 'pending',
         ]);
 
@@ -181,6 +201,7 @@ class PropertiesController extends Controller
 
         if ($existingBid) {
             $user->balance += $existingBid->amount;
+            $user->funds += $existingBid->amount;
             $user->save();
             $existingBid->delete();
 

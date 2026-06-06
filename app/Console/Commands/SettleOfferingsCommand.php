@@ -2,13 +2,13 @@
 
 namespace App\Console\Commands;
 
-use App\Actions\Offerings\SettleOffering;
+use App\Actions\Offerings\ResolveOfferingOutcomeAction;
 use App\Models\EquityClass;
 use App\Models\Offering;
-use App\Services\DecidimIntegrationService;
-use App\Services\EquityAllocationService;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Schema;
 
 class SettleOfferingsCommand extends Command
 {
@@ -22,7 +22,6 @@ class SettleOfferingsCommand extends Command
         $offerings = Offering::where('status', 'CLOSED')
             ->whereNotNull('campaign_end')
             ->where('campaign_end', '<=', $now)
-            ->whereRaw('(SELECT COALESCE(SUM(amount), 0) FROM bids WHERE bids.offering_id = offerings.id AND bids.status IN ("PLEDGED","ACCEPTED")) >= target_raise')
             ->get();
 
         if ($offerings->isEmpty()) {
@@ -31,33 +30,32 @@ class SettleOfferingsCommand extends Command
             return 0;
         }
 
-        $svc = new EquityAllocationService();
-        $decidim = new DecidimIntegrationService();
+        $resolver = new ResolveOfferingOutcomeAction();
 
         foreach ($offerings as $offering) {
             $this->info("Settling offering: {$offering->id} - {$offering->name}");
 
             $equityClass = EquityClass::firstOrCreate(
                 ['property_id' => $offering->property_id, 'code' => 'ORD-A'],
-                ['name' => 'Ordinary A']
+                array_filter([
+                    'name' => 'Ordinary A',
+                    'hotel_id' => Schema::hasColumn('equity_classes', 'hotel_id') ? $offering->property_id : null,
+                ], fn ($value) => $value !== null)
             );
 
             try {
-                $settler = new SettleOffering($svc);
-                $settler->handle($offering, $equityClass->id, null);
-                $this->info("Offering {$offering->id} settled.");
-
-                try {
-                    $decidim->syncOfferingGovernance($offering);
-                    $this->info("Offering {$offering->id} synced to Decidim.");
-                } catch (\Throwable $e) {
-                    $this->warn("Decidim sync failed for offering {$offering->id}: " . $e->getMessage());
-                }
+                $resolved = $resolver->handle($offering, $equityClass->id, $this->orgStewardUserId());
+                $this->info("Offering {$offering->id} resolved as {$resolved->status}.");
             } catch (\Throwable $e) {
                 $this->error("Failed to settle offering {$offering->id}: " . $e->getMessage());
             }
         }
 
         return 0;
+    }
+
+    private function orgStewardUserId(): ?int
+    {
+        return User::where('email', config('defender.org_steward.email'))->value('id');
     }
 }
