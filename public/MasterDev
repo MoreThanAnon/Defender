@@ -5,3 +5,8 @@ php artisan db:seed
 Username and password for admin:
 admin
 admin
+
+To do
+
+When "Funding Progress" is 100% the clocks on the bidding page are still running. Fix this.
+

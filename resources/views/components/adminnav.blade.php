@@ -4,16 +4,6 @@
         $adminUser = $impersonator ?: auth()->user();
     @endphp
 
-    @if ($adminUser && $adminUser->hasRole('admin'))
-        <nav class="admin-nav">
-            <ul class="nav">
-                <li class="nav-item"><a class="nav-link" href="{{ route('admin.dashboard') }}">Admin Dashboard</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ route('admin.properties.index') }}">Properties</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ route('property.create') }}">Create Property</a></li>
-                <li class="nav-item"><a class="nav-link" href="{{ route('admin.users.index') }}">Act as User</a></li>
-            </ul>
-        </nav>
-    @endif
 @endauth
 
 <nav class="navbar navbar-expand-lg navbar-light bg-light">

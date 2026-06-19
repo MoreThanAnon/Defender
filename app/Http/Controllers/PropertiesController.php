@@ -6,6 +6,7 @@ use App\Models\Bid;
 use App\Models\Property;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PropertiesController extends Controller
 {
@@ -13,17 +14,83 @@ class PropertiesController extends Controller
     {
         $query = Property::query();
 
-        if ($request->input('filter') === 'activeBids') {
+        if ($request->input('filter') === 'activeBids' || $request->input('status') === '1') {
             $query->where('status', 1);
+        } elseif ($request->filled('status')) {
+            $query->where('status', $request->integer('status'));
         }
 
         if ($request->filled('eircodeRegion')) {
             $query->where('eircode', 'LIKE', $request->eircodeRegion . '%');
         }
 
-        $properties = $query->with('images')->get();
+        if ($request->filled('type')) {
+            $query->where('type', $request->input('type'));
+        }
 
-        return view('properties', compact('properties'));
+        if ($request->filled('price_min')) {
+            $query->where('price', '>=', $request->input('price_min'));
+        }
+
+        if ($request->filled('price_max')) {
+            $query->where('price', '<=', $request->input('price_max'));
+        }
+
+        if ($request->filled('beds_min')) {
+            $query->where('beds', '>=', $request->integer('beds_min'));
+        }
+
+        if ($request->filled('baths_min')) {
+            $query->where('baths', '>=', $request->integer('baths_min'));
+        }
+
+        if ($request->filled('keyword')) {
+            $keyword = '%' . $request->input('keyword') . '%';
+            $query->where(function ($query) use ($keyword) {
+                $query->where('name', 'LIKE', $keyword)
+                    ->orWhere('address', 'LIKE', $keyword)
+                    ->orWhere('description', 'LIKE', $keyword)
+                    ->orWhere('ber_rating', 'LIKE', $keyword);
+            });
+        }
+
+        match ($request->input('sort')) {
+            'price_asc' => $query->orderBy('price'),
+            'price_desc' => $query->orderByDesc('price'),
+            'newest' => $query->orderByDesc('created_at'),
+            default => $query->orderBy('name'),
+        };
+
+        $properties = $query->with('images')->get();
+        $propertyStatuses = DB::table('properties_status')->pluck('status', 'id');
+        $propertyTypes = Property::whereNotNull('type')->distinct()->orderBy('type')->pluck('type');
+        $eircodeRegions = Property::whereNotNull('eircode')
+            ->pluck('eircode')
+            ->map(fn ($eircode) => strtoupper(substr(preg_replace('/\s+/', '', $eircode), 0, 3)))
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values();
+        $filtersActive = $request->hasAny([
+            'filter',
+            'status',
+            'eircodeRegion',
+            'type',
+            'price_min',
+            'price_max',
+            'beds_min',
+            'baths_min',
+            'keyword',
+            'sort',
+        ]);
+
+        return view('properties', compact(
+            'properties',
+            'propertyStatuses',
+            'propertyTypes',
+            'eircodeRegions',
+            'filtersActive'
+        ));
     }
 
     public function placeBid(Request $request, $id)

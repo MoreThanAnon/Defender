@@ -5,4 +5,7 @@ return [
     'api_token' => env('DECIDIM_API_TOKEN', null),
     'space_id' => env('DECIDIM_SPACE_ID', null),
     'assembly_id' => env('DECIDIM_ASSEMBLY_ID', null),
+    'api_key' => env('DECIDIM_API_KEY', null),
+    'api_secret' => env('DECIDIM_API_SECRET', null),
+    'property_governance_token' => env('DECIDIM_PROPERTY_GOVERNANCE_TOKEN', env('DECIDIM_API_SECRET', null)),
 ];

@@ -24,6 +24,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => view('welcome'));
 Route::view('/moderator', 'moderator')->name('moderator');
+Route::get('/decidim/test', [DecidimController::class, 'test'])->name('decidim.test');
 
 Route::middleware('guest')->group(function () {
     Route::get('/register', [RegisterController::class, 'showRegisterForm'])->name('register');
