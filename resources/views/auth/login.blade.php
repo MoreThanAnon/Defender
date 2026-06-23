@@ -129,6 +129,9 @@
         <div class="col-sm-10 col-md-7 col-lg-5">
             <div class="auth-card card p-4 p-md-5">
                 <h2 class="text-center mb-4 auth-title">{{ __('Login') }}</h2>
+                <p class="text-center text-muted small mb-4">
+                    Sign in to Defender. Governance opens from Defender after you are signed in; participants never need a separate Decidim login.
+                </p>
 
                 @if ($errors->any())
                     <div class="alert alert-danger">
@@ -144,7 +147,7 @@
                     @csrf
 
                     <div class="mb-3">
-                        <label for="username" class="form-label">{{ __('Username') }}</label>
+                        <label for="username" class="form-label">{{ __('Username or email') }}</label>
                         <input id="username" type="text"
                                class="form-control form-control-lg @error('username') is-invalid @enderror"
                                name="username" value="{{ old('username') }}" required autofocus

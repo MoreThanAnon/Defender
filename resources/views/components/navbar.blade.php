@@ -64,6 +64,12 @@
                 </li>
 
                 @auth
+                    <li class="nav-item">
+                        <a class="nav-link {{ Request::routeIs('governance') ? 'active fw-semibold text-primary' : '' }}" href="{{ route('governance') }}">
+                            Governance
+                        </a>
+                    </li>
+
                     @if($canUseAdminTools)
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle {{ Request::routeIs('admin.*') ? 'text-primary fw-semibold' : '' }}"

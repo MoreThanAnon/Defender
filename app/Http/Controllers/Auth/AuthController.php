@@ -16,11 +16,16 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'username' => 'required',
+            'username' => 'required|string',
             'password' => 'required',
         ]);
 
-        if (Auth::attempt($request->only('username', 'password'), $request->boolean('remember'))) {
+        $identifier = $request->string('username')->trim()->toString();
+        $remember = $request->boolean('remember');
+        $authenticated = Auth::attempt(['username' => $identifier, 'password' => $request->input('password')], $remember)
+            || Auth::attempt(['email' => $identifier, 'password' => $request->input('password')], $remember);
+
+        if ($authenticated) {
             $request->session()->regenerate();
 
             return redirect()->route('dashboard');

@@ -18,6 +18,7 @@ use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UpdateController;
 use App\Http\Controllers\WithdrawalController;
 use App\Http\Controllers\DecidimController;
+use App\Http\Controllers\DecidimOAuthController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -25,6 +26,9 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', fn () => view('welcome'));
 Route::view('/moderator', 'moderator')->name('moderator');
 Route::get('/decidim/test', [DecidimController::class, 'test'])->name('decidim.test');
+Route::get('/oauth/authorize', [DecidimOAuthController::class, 'oauthAuthorize'])
+    ->middleware('auth')
+    ->name('decidim.oauth.authorize');
 
 Route::middleware('guest')->group(function () {
     Route::get('/register', [RegisterController::class, 'showRegisterForm'])->name('register');
@@ -40,6 +44,8 @@ Route::middleware('guest')->group(function () {
 Route::post('/password/reset', [ResetPasswordController::class, 'reset'])->name('password.update');
 
 Route::middleware('auth')->group(function () {
+    Route::get('/governance', fn () => redirect()->away(rtrim(config('decidim.base_url'), '/').'/sso/laravel'))
+        ->name('governance');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/dashboard', [AuthController::class, 'dashboard'])->name('dashboard');
     Route::get('/home', [HomeController::class, 'index'])->name('home');
