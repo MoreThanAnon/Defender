@@ -12,6 +12,7 @@ use App\Services\Decidim\DecidimGovernanceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class AdminController extends Controller
 {
@@ -112,11 +113,17 @@ class AdminController extends Controller
             'created' => DecidimGovernanceSpace::where('status', 'created')->count(),
             'failed' => DecidimGovernanceSpace::where('status', 'failed')->count(),
             'pending' => DecidimGovernanceSpace::where('status', 'pending')->count(),
+            'syncing' => DecidimGovernanceSpace::where('status', 'syncing')->count(),
             'synced_roles' => DecidimGovernanceSync::count(),
             'settled_without_space' => Offering::where('status', 'SETTLED')->whereDoesntHave('decidimGovernanceSpace')->count(),
+            'failed_jobs' => Schema::hasTable('failed_jobs') ? DB::table('failed_jobs')->count() : 0,
         ];
 
-        return view('admin.decidim', compact('spaces', 'syncCounts', 'offeringsWithoutSpaces', 'summary'));
+        $failedJobs = Schema::hasTable('failed_jobs')
+            ? DB::table('failed_jobs')->orderByDesc('failed_at')->take(10)->get()
+            : collect();
+
+        return view('admin.decidim', compact('spaces', 'syncCounts', 'offeringsWithoutSpaces', 'summary', 'failedJobs'));
     }
 
     public function retryDecidim(Offering $offering, DecidimGovernanceService $governance)

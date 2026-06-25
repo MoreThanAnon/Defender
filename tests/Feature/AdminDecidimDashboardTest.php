@@ -47,6 +47,9 @@ class AdminDecidimDashboardTest extends TestCase
             'decidim_proposals_component_id' => 'proposals_1',
             'decidim_meetings_component_id' => 'meetings_1',
             'status' => 'created',
+            'retry_count' => 2,
+            'last_attempted_at' => now()->subMinutes(10),
+            'last_succeeded_at' => now()->subMinutes(5),
         ]);
 
         DecidimGovernanceSync::create([
@@ -61,6 +64,15 @@ class AdminDecidimDashboardTest extends TestCase
             'payload' => ['test' => true],
         ]);
 
+        DB::table('failed_jobs')->insert([
+            'uuid' => 'failed-job-dashboard-test',
+            'connection' => 'database',
+            'queue' => 'default',
+            'payload' => '{"displayName":"App\\\\Jobs\\\\CreateDecidimGovernanceSpace"}',
+            'exception' => 'Dashboard test failed job exception',
+            'failed_at' => now(),
+        ]);
+
         $this->actingAs($admin)
             ->get(route('admin.decidim.index'))
             ->assertOk()
@@ -68,6 +80,9 @@ class AdminDecidimDashboardTest extends TestCase
             ->assertSee('dashboard-test-assembly')
             ->assertSee('Legal review required')
             ->assertSee('Synced investor roles')
+            ->assertSee('Failed queue jobs')
+            ->assertSee('Dashboard test failed job exception')
+            ->assertSee('Retries')
             ->assertSee('Retry sync');
     }
 }

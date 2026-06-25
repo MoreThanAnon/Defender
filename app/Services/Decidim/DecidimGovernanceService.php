@@ -22,6 +22,12 @@ class DecidimGovernanceService
         if (! config('decidim.enabled')) return tap($space)->update(['status' => 'pending']);
 
         try {
+            $space->forceFill([
+                'status' => 'syncing',
+                'retry_count' => (int) $space->retry_count + 1,
+                'last_attempted_at' => now(),
+            ])->save();
+
             $hotel = $offering->property;
             $slug = 'hotel-'.$offering->id.'-'.Str::slug($hotel->name);
             $assembly = $space->decidim_assembly_id ? [] : $this->client->createAssembly([
@@ -41,8 +47,8 @@ class DecidimGovernanceService
             $this->client->createDebate($debates['id'], ['title' => "Welcome discussion - {$hotel->name} is now fully funded", 'body' => "Settlement is complete. Use this opening discussion to identify the first priorities: urgent maintenance, bills due, operating costs, bank-account visibility, and the agenda for the first investor meeting. This is for exploration; move a mature idea to Investor Proposals when it needs a formal decision."]);
             $this->client->createProposal($proposals['id'], ['title' => 'Prepare first 90-day operating plan', 'body' => 'Request: create and publish a 90-day operating plan. It should list immediate maintenance, outstanding bills, expected running costs, current and forecast bank balance, reporting dates, accountable owners, and risks requiring an investor decision. Investors should review the attached evidence and support, oppose, or suggest amendments in the comments before a formal vote.']);
             $this->client->createMeeting($meetings['id'], ['title' => "First investor governance meeting - {$hotel->name}", 'description' => 'Purpose: agree the first 90-day priorities. Agenda: hotel condition, urgent costs and bills, bank/account visibility, maintenance actions, reporting cadence, and the operating-plan proposal. Investors should read the agenda and papers beforehand, attend online where possible, and record any action or decision in the linked proposal/vote.', 'starts_at' => now()->addDays(14)->toIso8601String(), 'location' => 'Online / Decidim / To be confirmed']);
-            $space->update(['decidim_taxonomy_id' => $taxonomy['id'] ?? null, 'decidim_debates_component_id' => $debates['id'], 'decidim_proposals_component_id' => $proposals['id'], 'decidim_meetings_component_id' => $meetings['id'], 'decidim_voting_component_id' => $votes['id'] ?? null, 'status' => 'created', 'error_message' => null]);
-        } catch (\Throwable $e) { $space->update(['status' => 'failed', 'error_message' => $e->getMessage()]); throw $e; }
+            $space->update(['decidim_taxonomy_id' => $taxonomy['id'] ?? null, 'decidim_debates_component_id' => $debates['id'], 'decidim_proposals_component_id' => $proposals['id'], 'decidim_meetings_component_id' => $meetings['id'], 'decidim_voting_component_id' => $votes['id'] ?? null, 'status' => 'created', 'last_succeeded_at' => now(), 'error_message' => null]);
+        } catch (\Throwable $e) { $space->update(['status' => 'failed', 'last_failed_at' => now(), 'error_message' => $e->getMessage()]); throw $e; }
         return $space->fresh();
     }
 

@@ -29,8 +29,10 @@
             'Created' => $summary['created'],
             'Failed' => $summary['failed'],
             'Pending' => $summary['pending'],
+            'Syncing' => $summary['syncing'],
             'Synced investor roles' => $summary['synced_roles'],
             'Settled missing Decidim' => $summary['settled_without_space'],
+            'Failed queue jobs' => $summary['failed_jobs'],
         ] as $label => $value)
             <div class="col-md-4 col-xl-2 mb-3">
                 <div class="card h-100 shadow-sm">
@@ -57,6 +59,8 @@
                         <th>Assembly</th>
                         <th>Components</th>
                         <th>Investor roles</th>
+                        <th>Retries</th>
+                        <th>Last sync</th>
                         <th>Last error</th>
                         <th class="text-end">Actions</th>
                     </tr>
@@ -68,6 +72,7 @@
                                 'created' => 'success',
                                 'failed' => 'danger',
                                 'pending' => 'warning',
+                                'syncing' => 'info',
                                 default => 'secondary',
                             };
                         @endphp
@@ -94,6 +99,12 @@
                                 <div>Voting: {{ $space->decidim_voting_component_id ?: 'placeholder / not installed' }}</div>
                             </td>
                             <td>{{ $syncCounts[$space->offering_id] ?? 0 }}</td>
+                            <td>{{ $space->retry_count }}</td>
+                            <td class="small">
+                                <div>Attempt: {{ $space->last_attempted_at?->diffForHumans() ?? '—' }}</div>
+                                <div class="text-success">Success: {{ $space->last_succeeded_at?->diffForHumans() ?? '—' }}</div>
+                                <div class="text-danger">Failed: {{ $space->last_failed_at?->diffForHumans() ?? '—' }}</div>
+                            </td>
                             <td class="text-danger small" style="max-width: 260px;">
                                 {{ $space->error_message ? \Illuminate\Support\Str::limit($space->error_message, 160) : '—' }}
                             </td>
@@ -108,7 +119,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="text-muted p-4">No Decidim governance spaces have been created yet.</td>
+                            <td colspan="10" class="text-muted p-4">No Decidim governance spaces have been created yet.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -119,6 +130,42 @@
                 {{ $spaces->links() }}
             </div>
         @endif
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">Recent failed queue jobs</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Connection</th>
+                        <th>Queue</th>
+                        <th>Failed at</th>
+                        <th>Exception</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($failedJobs as $job)
+                        <tr>
+                            <td>{{ $job->id ?? $job->uuid ?? '—' }}</td>
+                            <td>{{ $job->connection ?? '—' }}</td>
+                            <td>{{ $job->queue ?? '—' }}</td>
+                            <td>{{ $job->failed_at ?? '—' }}</td>
+                            <td class="small text-danger" style="max-width: 520px;">
+                                {{ \Illuminate\Support\Str::limit($job->exception ?? '', 220) }}
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="text-muted p-4">No failed queue jobs have been recorded.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <div class="card shadow-sm">
