@@ -19,13 +19,26 @@ class AssetDocument extends Model
         'mime_type',
         'size_bytes',
         'review_status',
+        'visible_to_investors',
+        'published_at',
+        'publication_notes',
         'reviewed_at',
     ];
 
     protected $casts = [
         'size_bytes' => 'integer',
+        'visible_to_investors' => 'boolean',
+        'published_at' => 'datetime',
         'reviewed_at' => 'datetime',
     ];
+
+    public function scopeInvestorVisible($query)
+    {
+        return $query
+            ->where('visible_to_investors', true)
+            ->where('review_status', 'reviewed')
+            ->whereNotNull('published_at');
+    }
 
     public function offering()
     {

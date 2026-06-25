@@ -8,11 +8,13 @@ use Illuminate\Http\Request;
 use App\Models\withdrawal;
 use App\Models\User;
 use App\Models\Bid;
+use App\Models\AssetDocument;
 use App\Models\DecidimGovernanceSync;
 use App\Models\EquityPosition;
 use App\Models\Investment;
 use App\Models\LoanNote;
 use App\Models\Offering;
+use Illuminate\Support\Facades\Storage;
 
 class HomeController extends Controller
 {
@@ -104,6 +106,7 @@ class HomeController extends Controller
             'property',
             'decidimGovernanceSpace',
             'assetOperationsChecklist',
+            'assetDocuments' => fn ($query) => $query->investorVisible()->orderByDesc('published_at'),
             'equityPositions' => fn ($query) => $query->where('holder_user_id', $userId),
             'loanNotes' => fn ($query) => $query->where('investor_id', $userId)->orWhere('lender_user_id', $userId),
         ])
@@ -116,5 +119,31 @@ class HomeController extends Controller
             ->groupBy('offering_id');
 
         return view('my-assets', compact('offerings', 'syncs'));
+    }
+
+    public function downloadAssetDocument(Offering $offering, AssetDocument $document)
+    {
+        abort_unless((int) $document->offering_id === (int) $offering->id, 404);
+        abort_unless($this->userHasFundedPosition($offering, auth()->id()), 403);
+        abort_unless($document->visible_to_investors && $document->review_status === 'reviewed' && $document->published_at, 404);
+        abort_unless(Storage::disk($document->disk)->exists($document->path), 404);
+
+        return Storage::disk($document->disk)->download($document->path, $document->original_filename);
+    }
+
+    private function userHasFundedPosition(Offering $offering, int $userId): bool
+    {
+        return EquityPosition::where('offering_id', $offering->id)
+            ->where('holder_user_id', $userId)
+            ->exists()
+            || LoanNote::where('offering_id', $offering->id)
+                ->where(function ($query) use ($userId) {
+                    $query->where('investor_id', $userId)
+                        ->orWhere('lender_user_id', $userId);
+                })
+                ->exists()
+            || DecidimGovernanceSync::where('offering_id', $offering->id)
+                ->where('investor_id', $userId)
+                ->exists();
     }
 }

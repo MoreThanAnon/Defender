@@ -121,6 +121,47 @@
                                     </ul>
                                 </div>
                             </div>
+
+                            <div class="mt-4">
+                                <h6>Published asset documents</h6>
+                                <p class="text-muted small mb-2">
+                                    These files have been marked visible to investors by an admin. Publication here is not legal,
+                                    tax, regulatory, or investment approval.
+                                </p>
+                                @if($offering->assetDocuments->isEmpty())
+                                    <p class="text-muted small mb-0">No investor-visible documents have been published yet.</p>
+                                @else
+                                    <div class="table-responsive">
+                                        <table class="table table-sm align-middle mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>Document</th>
+                                                    <th>Publication note</th>
+                                                    <th>Published</th>
+                                                    <th class="text-end">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($offering->assetDocuments as $document)
+                                                    <tr>
+                                                        <td>
+                                                            <div>{{ $document->title }}</div>
+                                                            <div class="text-muted small">{{ $document->original_filename }}</div>
+                                                        </td>
+                                                        <td class="small">{{ $document->publication_notes ?: 'No publication note provided.' }}</td>
+                                                        <td class="small">{{ $document->published_at?->diffForHumans() }}</td>
+                                                        <td class="text-end">
+                                                            <a href="{{ route('my-assets.documents.download', [$offering, $document]) }}" class="btn btn-outline-secondary btn-sm">
+                                                                Download
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                @endif
+                            </div>
                         </div>
                     </div>
                 </div>

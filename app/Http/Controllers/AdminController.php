@@ -326,12 +326,21 @@ class AdminController extends Controller
         $data = $request->validate([
             'review_status' => ['required', 'string', Rule::in(['needs_review', 'reviewed', 'changes_needed'])],
             'notes' => ['nullable', 'string'],
+            'visible_to_investors' => ['nullable', 'boolean'],
+            'publication_notes' => ['nullable', 'string'],
         ]);
+
+        $visibleToInvestors = $data['review_status'] === 'reviewed'
+            ? $request->boolean('visible_to_investors')
+            : false;
 
         $document->update([
             'review_status' => $data['review_status'],
             'notes' => $data['notes'] ?? $document->notes,
             'reviewed_at' => $data['review_status'] === 'reviewed' ? now() : null,
+            'visible_to_investors' => $visibleToInvestors,
+            'published_at' => $visibleToInvestors ? ($document->published_at ?? now()) : null,
+            'publication_notes' => $data['publication_notes'] ?? null,
         ]);
 
         return redirect()

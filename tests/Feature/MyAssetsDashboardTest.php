@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\AssetOperationsChecklist;
+use App\Models\AssetDocument;
 use App\Models\DecidimGovernanceSpace;
 use App\Models\DecidimGovernanceSync;
 use App\Models\EquityClass;
@@ -13,6 +14,7 @@ use App\Models\Property;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class MyAssetsDashboardTest extends TestCase
@@ -21,6 +23,8 @@ class MyAssetsDashboardTest extends TestCase
 
     public function test_investor_can_view_funded_assets_and_governance_status(): void
     {
+        Storage::fake('local');
+
         DB::table('properties_status')->insertOrIgnore([
             ['id' => '1', 'status' => 'Active', 'description' => 'Test active status'],
         ]);
@@ -104,6 +108,46 @@ class MyAssetsDashboardTest extends TestCase
             'reviewed_at' => now(),
         ]);
 
+        Storage::disk('local')->put('asset-documents/offering-'.$offering->id.'/visible.pdf', 'visible document');
+        Storage::disk('local')->put('asset-documents/offering-'.$offering->id.'/hidden.pdf', 'hidden document');
+
+        $visibleDocument = AssetDocument::create([
+            'offering_id' => $offering->id,
+            'property_id' => $property->id,
+            'uploaded_by' => null,
+            'document_key' => 'valuation_or_price_support',
+            'title' => 'Published valuation summary',
+            'notes' => 'Reviewed internally.',
+            'disk' => 'local',
+            'path' => 'asset-documents/offering-'.$offering->id.'/visible.pdf',
+            'original_filename' => 'visible.pdf',
+            'mime_type' => 'application/pdf',
+            'size_bytes' => 16,
+            'review_status' => 'reviewed',
+            'visible_to_investors' => true,
+            'published_at' => now(),
+            'publication_notes' => 'Shared for investor review, not legal approval.',
+            'reviewed_at' => now(),
+        ]);
+
+        $hiddenDocument = AssetDocument::create([
+            'offering_id' => $offering->id,
+            'property_id' => $property->id,
+            'uploaded_by' => null,
+            'document_key' => 'acquisition_agreement',
+            'title' => 'Admin only agreement',
+            'notes' => 'Do not publish yet.',
+            'disk' => 'local',
+            'path' => 'asset-documents/offering-'.$offering->id.'/hidden.pdf',
+            'original_filename' => 'hidden.pdf',
+            'mime_type' => 'application/pdf',
+            'size_bytes' => 15,
+            'review_status' => 'reviewed',
+            'visible_to_investors' => false,
+            'published_at' => null,
+            'reviewed_at' => now(),
+        ]);
+
         $this->actingAs($investor)
             ->get(route('my-assets'))
             ->assertOk()
@@ -113,6 +157,24 @@ class MyAssetsDashboardTest extends TestCase
             ->assertSee('Eligible')
             ->assertSee('15.0000%')
             ->assertSee('EUR 250.00')
-            ->assertSee('EUR 1,234.56');
+            ->assertSee('EUR 1,234.56')
+            ->assertSee('Published asset documents')
+            ->assertSee('Published valuation summary')
+            ->assertSee('Shared for investor review, not legal approval.')
+            ->assertDontSee('Admin only agreement');
+
+        $this->actingAs($investor)
+            ->get(route('my-assets.documents.download', [$offering, $visibleDocument]))
+            ->assertOk();
+
+        $this->actingAs($investor)
+            ->get(route('my-assets.documents.download', [$offering, $hiddenDocument]))
+            ->assertNotFound();
+
+        $otherInvestor = User::factory()->create();
+
+        $this->actingAs($otherInvestor)
+            ->get(route('my-assets.documents.download', [$offering, $visibleDocument]))
+            ->assertForbidden();
     }
 }

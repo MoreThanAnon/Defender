@@ -161,13 +161,18 @@ class AdminOperationsChecklistTest extends TestCase
             ->patch(route('admin.operations.documents.update', [$offering, $document]), [
                 'review_status' => 'reviewed',
                 'notes' => 'Accountant reviewed the valuation support.',
+                'visible_to_investors' => '1',
+                'publication_notes' => 'Investor pack valuation summary.',
             ])
             ->assertRedirect(route('admin.operations.show', $offering));
 
         $document->refresh();
         $this->assertSame('reviewed', $document->review_status);
         $this->assertSame('Accountant reviewed the valuation support.', $document->notes);
+        $this->assertTrue($document->visible_to_investors);
+        $this->assertSame('Investor pack valuation summary.', $document->publication_notes);
         $this->assertNotNull($document->reviewed_at);
+        $this->assertNotNull($document->published_at);
 
         $this->actingAs($admin)
             ->patch(route('admin.operations.documents.update', [$offering, $document]), [
@@ -179,7 +184,9 @@ class AdminOperationsChecklistTest extends TestCase
         $document->refresh();
         $this->assertSame('changes_needed', $document->review_status);
         $this->assertSame('Need a signed valuation letter.', $document->notes);
+        $this->assertFalse($document->visible_to_investors);
         $this->assertNull($document->reviewed_at);
+        $this->assertNull($document->published_at);
 
         $this->actingAs($admin)
             ->get(route('admin.operations.index'))

@@ -112,6 +112,7 @@
                 <p class="text-muted">
                     Upload supporting documents against the checklist. Uploading a file marks that document type as gathered,
                     but it does not mean the document has been legally, tax, regulatory, or commercially approved.
+                    Investor visibility is off by default and should only be enabled after review.
                 </p>
 
                 <form method="POST" action="{{ route('admin.operations.documents.store', $offering) }}" enctype="multipart/form-data" class="border rounded p-3 mb-4">
@@ -186,9 +187,28 @@
                                             <input type="text" name="notes" class="form-control form-control-sm mb-2"
                                                    value="{{ $document->notes }}"
                                                    placeholder="Reviewer note">
+                                            <div class="form-check mb-2">
+                                                <input type="hidden" name="visible_to_investors" value="0">
+                                                <input class="form-check-input" type="checkbox" name="visible_to_investors" value="1" id="visible_{{ $document->id }}"
+                                                       @checked($document->visible_to_investors)
+                                                       @disabled($document->review_status !== 'reviewed')>
+                                                <label class="form-check-label small" for="visible_{{ $document->id }}">
+                                                    Visible to investors after review
+                                                </label>
+                                            </div>
+                                            <input type="text" name="publication_notes" class="form-control form-control-sm mb-2"
+                                                   value="{{ $document->publication_notes }}"
+                                                   placeholder="Investor publication note">
                                             <button type="submit" class="btn btn-outline-primary btn-sm">Update review</button>
                                             @if($document->reviewed_at)
                                                 <div class="text-muted small mt-1">Reviewed {{ $document->reviewed_at->diffForHumans() }}</div>
+                                            @endif
+                                            @if($document->published_at)
+                                                <div class="text-success small mt-1">Investor-visible {{ $document->published_at->diffForHumans() }}</div>
+                                            @elseif($document->visible_to_investors)
+                                                <div class="text-warning small mt-1">Visibility pending reviewed status.</div>
+                                            @else
+                                                <div class="text-muted small mt-1">Admin-only</div>
                                             @endif
                                         </form>
                                     </td>
