@@ -1,0 +1,108 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\HotelOperationsChecklist;
+use App\Models\Offering;
+use App\Models\Property;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Tests\TestCase;
+
+class AdminOperationsChecklistTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_admin_can_view_operations_index_and_checklist(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $offering = $this->settledOffering();
+
+        $this->actingAs($admin)
+            ->get(route('admin.operations.index'))
+            ->assertOk()
+            ->assertSee('Hotel Operations')
+            ->assertSee('Legal review pending')
+            ->assertSee($offering->name);
+
+        $this->actingAs($admin)
+            ->get(route('admin.operations.show', $offering))
+            ->assertOk()
+            ->assertSee('Operating snapshot')
+            ->assertSee('Legal / compliance review placeholders')
+            ->assertSee('Save operations checklist');
+
+        $this->assertDatabaseHas('hotel_operations_checklists', [
+            'offering_id' => $offering->id,
+            'property_id' => $offering->property_id,
+        ]);
+    }
+
+    public function test_admin_can_update_operations_checklist(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $offering = $this->settledOffering();
+
+        $this->actingAs($admin)
+            ->post(route('admin.operations.update', $offering), [
+                'bank_balance' => '12345.67',
+                'bills_due_text' => "Electricity invoice due Friday\nInsurance renewal",
+                'maintenance_tasks_text' => "Inspect boiler\nRepair roof leak",
+                'meeting_status' => [
+                    'first_meeting_scheduled' => '1',
+                    'agenda_published' => '0',
+                    'minutes_published' => '0',
+                ],
+                'proposal_status' => [
+                    'operating_plan_proposed' => '1',
+                    'maintenance_budget_proposed' => '0',
+                    'bank_reporting_proposed' => '1',
+                ],
+                'legal_review' => [
+                    'solicitor_review' => '1',
+                    'central_bank_review' => '0',
+                    'company_law_review' => '0',
+                    'investor_rights_review' => '0',
+                    'tax_review' => '0',
+                    'property_structure_review' => '0',
+                    'data_protection_review' => '0',
+                ],
+                'admin_notes' => 'Need solicitor review before public claim.',
+            ])
+            ->assertRedirect(route('admin.operations.show', $offering));
+
+        $checklist = HotelOperationsChecklist::where('offering_id', $offering->id)->firstOrFail();
+
+        $this->assertSame('12345.67', $checklist->bank_balance);
+        $this->assertSame('Electricity invoice due Friday', $checklist->bills_due[0]['label']);
+        $this->assertTrue($checklist->meeting_status['first_meeting_scheduled']);
+        $this->assertTrue($checklist->proposal_status['operating_plan_proposed']);
+        $this->assertTrue($checklist->legal_review['solicitor_review']);
+        $this->assertFalse($checklist->legal_review['central_bank_review']);
+        $this->assertNotNull($checklist->reviewed_at);
+    }
+
+    private function settledOffering(): Offering
+    {
+        DB::table('properties_status')->insertOrIgnore([
+            ['id' => '1', 'status' => 'Active', 'description' => 'Test active status'],
+        ]);
+
+        $property = Property::factory()->create(['name' => 'Operations Hotel']);
+
+        return Offering::create([
+            'property_id' => $property->id,
+            'name' => 'Operations test offering',
+            'status' => 'SETTLED',
+            'target_raise' => '1000.00',
+            'target_raise_cents' => 100000,
+            'hard_cap_cents' => 100000,
+            'org_reserve_pct' => '10.00',
+            'min_local_capital_pct' => 0,
+            'min_local_investor_count' => 1,
+            'require_local_threshold_for_settlement' => true,
+            'campaign_end' => now()->subDay(),
+        ]);
+    }
+}

@@ -135,4 +135,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/properties', [AdminController::class, 'properties'])->name('admin.properties.index');
     Route::get('/decidim', [AdminController::class, 'decidim'])->name('admin.decidim.index');
     Route::post('/decidim/offerings/{offering}/retry', [AdminController::class, 'retryDecidim'])->name('admin.decidim.retry');
+    Route::get('/operations', [AdminController::class, 'operations'])->name('admin.operations.index');
+    Route::get('/operations/offerings/{offering}', [AdminController::class, 'showOperations'])->name('admin.operations.show');
+    Route::post('/operations/offerings/{offering}', [AdminController::class, 'updateOperations'])->name('admin.operations.update');
 });

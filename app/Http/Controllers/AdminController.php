@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Investment;
 use App\Models\DecidimGovernanceSpace;
 use App\Models\DecidimGovernanceSync;
+use App\Models\HotelOperationsChecklist;
 use App\Models\Offering;
 use App\Models\Property;
 use App\Models\User;
@@ -58,6 +59,12 @@ class AdminController extends Controller
                 'description' => 'Check governance sync status, Assembly URLs, investor access and retries.',
                 'url' => route('admin.decidim.index'),
                 'class' => 'info',
+            ],
+            [
+                'label' => 'Hotel Operations',
+                'description' => 'Track bank balance, bills, maintenance, meetings, proposals and legal-review items.',
+                'url' => route('admin.operations.index'),
+                'class' => 'dark',
             ],
         ];
 
@@ -139,6 +146,118 @@ class AdminController extends Controller
                 ->route('admin.decidim.index')
                 ->with('error', "Decidim sync failed for offering #{$offering->id}: {$e->getMessage()}");
         }
+    }
+
+    public function operations()
+    {
+        $offerings = Offering::with(['property', 'decidimGovernanceSpace', 'hotelOperationsChecklist'])
+            ->where('status', 'SETTLED')
+            ->orderByDesc('updated_at')
+            ->paginate(15);
+
+        $summary = [
+            'settled' => Offering::where('status', 'SETTLED')->count(),
+            'checklists' => HotelOperationsChecklist::count(),
+            'reviewed' => HotelOperationsChecklist::whereNotNull('reviewed_at')->count(),
+            'legal_pending' => HotelOperationsChecklist::where(function ($query) {
+                $query->whereNull('legal_review')
+                    ->orWhereJsonContains('legal_review->solicitor_review', false)
+                    ->orWhereJsonContains('legal_review->central_bank_review', false)
+                    ->orWhereJsonContains('legal_review->company_law_review', false)
+                    ->orWhereJsonContains('legal_review->tax_review', false)
+                    ->orWhereJsonContains('legal_review->property_structure_review', false);
+            })->count(),
+        ];
+
+        return view('admin.operations.index', compact('offerings', 'summary'));
+    }
+
+    public function showOperations(Offering $offering)
+    {
+        abort_unless($offering->status === 'SETTLED', 404);
+
+        $checklist = HotelOperationsChecklist::firstOrCreate(
+            ['offering_id' => $offering->id],
+            [
+                'property_id' => $offering->property_id,
+                'bills_due' => [],
+                'maintenance_tasks' => [],
+                'meeting_status' => [
+                    'first_meeting_scheduled' => false,
+                    'agenda_published' => false,
+                    'minutes_published' => false,
+                ],
+                'proposal_status' => [
+                    'operating_plan_proposed' => false,
+                    'maintenance_budget_proposed' => false,
+                    'bank_reporting_proposed' => false,
+                ],
+                'legal_review' => [
+                    'solicitor_review' => false,
+                    'central_bank_review' => false,
+                    'company_law_review' => false,
+                    'investor_rights_review' => false,
+                    'tax_review' => false,
+                    'property_structure_review' => false,
+                    'data_protection_review' => false,
+                ],
+            ]
+        );
+
+        $offering->load(['property', 'decidimGovernanceSpace', 'equityPositions', 'loanNotes']);
+
+        return view('admin.operations.show', compact('offering', 'checklist'));
+    }
+
+    public function updateOperations(Request $request, Offering $offering)
+    {
+        abort_unless($offering->status === 'SETTLED', 404);
+
+        $data = $request->validate([
+            'bank_balance' => ['nullable', 'numeric', 'min:0'],
+            'bills_due_text' => ['nullable', 'string'],
+            'maintenance_tasks_text' => ['nullable', 'string'],
+            'admin_notes' => ['nullable', 'string'],
+            'meeting_status' => ['array'],
+            'proposal_status' => ['array'],
+            'legal_review' => ['array'],
+        ]);
+
+        $checklist = HotelOperationsChecklist::firstOrCreate(
+            ['offering_id' => $offering->id],
+            ['property_id' => $offering->property_id]
+        );
+
+        $checklist->update([
+            'property_id' => $offering->property_id,
+            'bank_balance' => $data['bank_balance'] ?? null,
+            'bills_due' => $this->linesToChecklist($data['bills_due_text'] ?? ''),
+            'maintenance_tasks' => $this->linesToChecklist($data['maintenance_tasks_text'] ?? ''),
+            'meeting_status' => $this->booleanMap($data['meeting_status'] ?? []),
+            'proposal_status' => $this->booleanMap($data['proposal_status'] ?? []),
+            'legal_review' => $this->booleanMap($data['legal_review'] ?? []),
+            'admin_notes' => $data['admin_notes'] ?? null,
+            'reviewed_at' => now(),
+        ]);
+
+        return redirect()
+            ->route('admin.operations.show', $offering)
+            ->with('success', 'Hotel operations checklist updated.');
+    }
+
+    private function linesToChecklist(string $value): array
+    {
+        return collect(preg_split('/\r\n|\r|\n/', $value))
+            ->map(fn (string $line) => trim($line))
+            ->filter()
+            ->map(fn (string $line) => ['label' => $line, 'done' => false])
+            ->values()
+            ->all();
+    }
+
+    private function booleanMap(array $values): array
+    {
+        return collect($values)->map(fn ($value) => filter_var($value, FILTER_VALIDATE_BOOLEAN))->all();
     }
 
     public function impersonate(Request $request)

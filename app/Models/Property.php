@@ -74,4 +74,9 @@ class Property extends Model
     {
         return $this->hasMany(Offering::class);
     }
+
+    public function hotelOperationsChecklists()
+    {
+        return $this->hasMany(HotelOperationsChecklist::class);
+    }
 }

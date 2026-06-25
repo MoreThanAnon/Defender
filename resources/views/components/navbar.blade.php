@@ -93,6 +93,11 @@
                                             Decidim Integration
                                         </a>
                                     </li>
+                                    <li>
+                                        <a class="dropdown-item {{ Request::routeIs('admin.operations.*') ? 'active' : '' }}" href="{{ route('admin.operations.index') }}">
+                                            Hotel Operations
+                                        </a>
+                                    </li>
                                 @endif
                                 <li>
                                     <a class="dropdown-item {{ Request::routeIs('admin.users.index') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">
