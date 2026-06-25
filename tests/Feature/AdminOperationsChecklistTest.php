@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\AssetOperationsChecklist;
+use App\Models\AssetActivityLog;
 use App\Models\Offering;
 use App\Models\Property;
 use App\Models\User;
@@ -45,6 +46,7 @@ class AdminOperationsChecklistTest extends TestCase
             ->assertSee('rental house')
             ->assertSee('shop unit')
             ->assertSee('Legal / compliance review placeholders')
+            ->assertSee('Activity / audit trail')
             ->assertSee('Save asset operations checklist');
 
         $this->assertDatabaseHas('asset_operations_checklists', [
@@ -110,6 +112,13 @@ class AdminOperationsChecklistTest extends TestCase
         $this->assertTrue($checklist->legal_review['solicitor_review']);
         $this->assertFalse($checklist->legal_review['central_bank_review']);
         $this->assertNotNull($checklist->reviewed_at);
+        $this->assertDatabaseHas('asset_activity_logs', [
+            'offering_id' => $offering->id,
+            'property_id' => $offering->property_id,
+            'actor_user_id' => $admin->id,
+            'action' => 'operations_checklist_updated',
+            'summary' => 'Asset operations checklist updated.',
+        ]);
 
         $this->actingAs($admin)
             ->get(route('admin.operations.index'))
@@ -143,6 +152,12 @@ class AdminOperationsChecklistTest extends TestCase
             'original_filename' => 'valuation.pdf',
             'review_status' => 'needs_review',
         ]);
+        $this->assertDatabaseHas('asset_activity_logs', [
+            'offering_id' => $offering->id,
+            'actor_user_id' => $admin->id,
+            'action' => 'asset_document_uploaded',
+            'summary' => 'Asset document uploaded: Independent valuation.',
+        ]);
 
         $document = $offering->assetDocuments()->firstOrFail();
         Storage::disk('local')->assertExists($document->path);
@@ -173,6 +188,12 @@ class AdminOperationsChecklistTest extends TestCase
         $this->assertSame('Investor pack valuation summary.', $document->publication_notes);
         $this->assertNotNull($document->reviewed_at);
         $this->assertNotNull($document->published_at);
+        $this->assertDatabaseHas('asset_activity_logs', [
+            'offering_id' => $offering->id,
+            'actor_user_id' => $admin->id,
+            'action' => 'asset_document_published_to_investors',
+            'summary' => 'Asset document review updated: Independent valuation.',
+        ]);
 
         $this->actingAs($admin)
             ->patch(route('admin.operations.documents.update', [$offering, $document]), [
@@ -187,11 +208,25 @@ class AdminOperationsChecklistTest extends TestCase
         $this->assertFalse($document->visible_to_investors);
         $this->assertNull($document->reviewed_at);
         $this->assertNull($document->published_at);
+        $this->assertDatabaseHas('asset_activity_logs', [
+            'offering_id' => $offering->id,
+            'actor_user_id' => $admin->id,
+            'action' => 'asset_document_review_updated',
+            'summary' => 'Asset document review updated: Independent valuation.',
+        ]);
 
         $this->actingAs($admin)
             ->get(route('admin.operations.index'))
             ->assertOk()
             ->assertSee('Document changes needed');
+
+        $this->actingAs($admin)
+            ->get(route('admin.operations.show', $offering))
+            ->assertOk()
+            ->assertSee('Activity / audit trail')
+            ->assertSee('asset document uploaded')
+            ->assertSee('asset document published to investors')
+            ->assertSee('asset document review updated');
 
         $this->actingAs($admin)
             ->delete(route('admin.operations.documents.destroy', [$offering, $document]))
@@ -201,6 +236,20 @@ class AdminOperationsChecklistTest extends TestCase
         $this->assertDatabaseMissing('asset_documents', [
             'id' => $document->id,
         ]);
+        $this->assertDatabaseHas('asset_activity_logs', [
+            'offering_id' => $offering->id,
+            'actor_user_id' => $admin->id,
+            'action' => 'asset_document_deleted',
+            'summary' => 'Asset document deleted: Independent valuation.',
+        ]);
+        $this->assertSame(4, AssetActivityLog::where('offering_id', $offering->id)
+            ->whereIn('action', [
+                'asset_document_uploaded',
+                'asset_document_published_to_investors',
+                'asset_document_review_updated',
+                'asset_document_deleted',
+            ])
+            ->count());
     }
 
     private function settledOffering(): Offering

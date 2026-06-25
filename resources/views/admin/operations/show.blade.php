@@ -356,5 +356,68 @@
 
         <button type="submit" class="btn btn-primary">Save asset operations checklist</button>
     </form>
+
+    <div class="card shadow-sm mt-4 mb-4">
+        <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <h5 class="mb-0">Activity / audit trail</h5>
+            <span class="badge bg-secondary">Latest 50 events</span>
+        </div>
+        <div class="card-body">
+            <p class="text-muted">
+                This log records operational actions for traceability. It is a technical audit trail and does not prove
+                legal, regulatory, tax, or investor-rights compliance.
+            </p>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>When</th>
+                            <th>Actor</th>
+                            <th>Action</th>
+                            <th>Summary</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($activityLogs as $log)
+                            <tr>
+                                <td>
+                                    <div>{{ $log->created_at?->format('Y-m-d H:i') }}</div>
+                                    <div class="text-muted small">{{ $log->created_at?->diffForHumans() }}</div>
+                                </td>
+                                <td>
+                                    @if($log->actor)
+                                        {{ $log->actor->name ?? $log->actor->email }}
+                                        <div class="text-muted small">User #{{ $log->actor->id }}</div>
+                                    @else
+                                        <span class="text-muted">System / deleted user</span>
+                                    @endif
+                                </td>
+                                <td><span class="badge bg-dark">{{ str_replace('_', ' ', $log->action) }}</span></td>
+                                <td>{{ $log->summary }}</td>
+                                <td>
+                                    @if($log->new_values)
+                                        <details>
+                                            <summary class="small">View changed values</summary>
+                                            <pre class="small bg-light p-2 mt-2 mb-0 rounded">{{ json_encode($log->new_values, JSON_PRETTY_PRINT) }}</pre>
+                                        </details>
+                                    @else
+                                        <span class="text-muted small">No value snapshot</span>
+                                    @endif
+                                    @if($log->ip_address)
+                                        <div class="text-muted small mt-1">IP: {{ $log->ip_address }}</div>
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="text-muted">No activity has been logged for this asset yet.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection

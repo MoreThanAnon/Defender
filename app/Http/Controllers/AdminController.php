@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Investment;
 use App\Models\DecidimGovernanceSpace;
 use App\Models\DecidimGovernanceSync;
+use App\Models\AssetActivityLog;
 use App\Models\AssetDocument;
 use App\Models\AssetOperationsChecklist;
 use App\Models\Offering;
@@ -141,11 +142,30 @@ class AdminController extends Controller
     {
         try {
             $space = $governance->createGovernanceForSettledOffering($offering->fresh(['property', 'equityPositions', 'loanNotes']));
+            $this->logAssetActivity(
+                request(),
+                $offering,
+                'decidim_retry_succeeded',
+                $space,
+                "Decidim sync retry completed with status {$space->status}.",
+                [],
+                ['status' => $space->status, 'assembly_url' => $space->decidim_assembly_url]
+            );
 
             return redirect()
                 ->route('admin.decidim.index')
                 ->with('success', "Decidim sync completed for offering #{$offering->id}. Status: {$space->status}.");
         } catch (\Throwable $e) {
+            $this->logAssetActivity(
+                request(),
+                $offering,
+                'decidim_retry_failed',
+                null,
+                'Decidim sync retry failed.',
+                [],
+                ['error' => $e->getMessage()]
+            );
+
             return redirect()
                 ->route('admin.decidim.index')
                 ->with('error', "Decidim sync failed for offering #{$offering->id}: {$e->getMessage()}");
@@ -218,10 +238,22 @@ class AdminController extends Controller
             ]
         );
 
-        $offering->load(['property', 'decidimGovernanceSpace', 'equityPositions', 'loanNotes', 'assetDocuments.uploader']);
+        $offering->load([
+            'property',
+            'decidimGovernanceSpace',
+            'equityPositions',
+            'loanNotes',
+            'assetDocuments.uploader',
+            'assetActivityLogs.actor',
+        ]);
         $assetDocumentItems = $this->assetDocumentChecklistItems();
+        $activityLogs = $offering->assetActivityLogs()
+            ->with('actor')
+            ->orderByDesc('created_at')
+            ->take(50)
+            ->get();
 
-        return view('admin.operations.show', compact('offering', 'checklist', 'assetDocumentItems'));
+        return view('admin.operations.show', compact('offering', 'checklist', 'assetDocumentItems', 'activityLogs'));
     }
 
     public function updateOperations(Request $request, Offering $offering)
@@ -244,7 +276,18 @@ class AdminController extends Controller
             ['property_id' => $offering->property_id]
         );
 
-        $checklist->update([
+        $oldValues = $checklist->only([
+            'bank_balance',
+            'bills_due',
+            'maintenance_tasks',
+            'required_documents',
+            'meeting_status',
+            'proposal_status',
+            'legal_review',
+            'admin_notes',
+        ]);
+
+        $newValues = [
             'property_id' => $offering->property_id,
             'bank_balance' => $data['bank_balance'] ?? null,
             'bills_due' => $this->linesToChecklist($data['bills_due_text'] ?? ''),
@@ -255,7 +298,18 @@ class AdminController extends Controller
             'legal_review' => $this->booleanMap($data['legal_review'] ?? []),
             'admin_notes' => $data['admin_notes'] ?? null,
             'reviewed_at' => now(),
-        ]);
+        ];
+
+        $checklist->update($newValues);
+        $this->logAssetActivity(
+            $request,
+            $offering,
+            'operations_checklist_updated',
+            $checklist,
+            'Asset operations checklist updated.',
+            $oldValues,
+            $newValues
+        );
 
         return redirect()
             ->route('admin.operations.show', $offering)
@@ -278,7 +332,7 @@ class AdminController extends Controller
         $file = $request->file('document');
         $path = $file->store("asset-documents/offering-{$offering->id}", 'local');
 
-        AssetDocument::create([
+        $document = AssetDocument::create([
             'offering_id' => $offering->id,
             'property_id' => $offering->property_id,
             'uploaded_by' => Auth::id(),
@@ -305,6 +359,20 @@ class AdminController extends Controller
             'required_documents' => $requiredDocuments,
             'reviewed_at' => now(),
         ]);
+        $this->logAssetActivity(
+            $request,
+            $offering,
+            'asset_document_uploaded',
+            $document,
+            "Asset document uploaded: {$document->title}.",
+            [],
+            [
+                'document_key' => $document->document_key,
+                'title' => $document->title,
+                'original_filename' => $document->original_filename,
+                'review_status' => $document->review_status,
+            ]
+        );
 
         return redirect()
             ->route('admin.operations.show', $offering)
@@ -334,14 +402,34 @@ class AdminController extends Controller
             ? $request->boolean('visible_to_investors')
             : false;
 
-        $document->update([
+        $oldValues = $document->only([
+            'review_status',
+            'notes',
+            'visible_to_investors',
+            'published_at',
+            'publication_notes',
+            'reviewed_at',
+        ]);
+
+        $newValues = [
             'review_status' => $data['review_status'],
             'notes' => $data['notes'] ?? $document->notes,
             'reviewed_at' => $data['review_status'] === 'reviewed' ? now() : null,
             'visible_to_investors' => $visibleToInvestors,
             'published_at' => $visibleToInvestors ? ($document->published_at ?? now()) : null,
             'publication_notes' => $data['publication_notes'] ?? null,
-        ]);
+        ];
+
+        $document->update($newValues);
+        $this->logAssetActivity(
+            $request,
+            $offering,
+            $visibleToInvestors ? 'asset_document_published_to_investors' : 'asset_document_review_updated',
+            $document,
+            "Asset document review updated: {$document->title}.",
+            $oldValues,
+            $newValues
+        );
 
         return redirect()
             ->route('admin.operations.show', $offering)
@@ -352,8 +440,28 @@ class AdminController extends Controller
     {
         abort_unless($offering->status === 'SETTLED' && (int) $document->offering_id === (int) $offering->id, 404);
 
+        $oldValues = [
+            'document_key' => $document->document_key,
+            'title' => $document->title,
+            'original_filename' => $document->original_filename,
+            'review_status' => $document->review_status,
+            'visible_to_investors' => $document->visible_to_investors,
+            'published_at' => $document->published_at,
+        ];
+        $documentId = $document->id;
+        $documentTitle = $document->title;
+
         Storage::disk($document->disk)->delete($document->path);
         $document->delete();
+        $this->logAssetActivity(
+            request(),
+            $offering,
+            'asset_document_deleted',
+            AssetDocument::class,
+            "Asset document deleted: {$documentTitle}.",
+            $oldValues,
+            ['deleted_document_id' => $documentId]
+        );
 
         return redirect()
             ->route('admin.operations.show', $offering)
@@ -373,6 +481,33 @@ class AdminController extends Controller
     private function booleanMap(array $values): array
     {
         return collect($values)->map(fn ($value) => filter_var($value, FILTER_VALIDATE_BOOLEAN))->all();
+    }
+
+    private function logAssetActivity(
+        Request $request,
+        Offering $offering,
+        string $action,
+        mixed $subject,
+        string $summary,
+        array $oldValues = [],
+        array $newValues = []
+    ): void {
+        $subjectType = is_object($subject) ? $subject::class : (is_string($subject) ? $subject : null);
+        $subjectId = is_object($subject) && method_exists($subject, 'getKey') ? $subject->getKey() : null;
+
+        AssetActivityLog::create([
+            'offering_id' => $offering->id,
+            'property_id' => $offering->property_id,
+            'actor_user_id' => Auth::id(),
+            'action' => $action,
+            'subject_type' => $subjectType,
+            'subject_id' => $subjectId,
+            'summary' => $summary,
+            'old_values' => $oldValues ?: null,
+            'new_values' => $newValues ?: null,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
     }
 
     private function emptyAssetDocumentChecklist(): array
