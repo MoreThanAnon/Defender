@@ -75,8 +75,13 @@ class Property extends Model
         return $this->hasMany(Offering::class);
     }
 
+    public function assetOperationsChecklists()
+    {
+        return $this->hasMany(AssetOperationsChecklist::class);
+    }
+
     public function hotelOperationsChecklists()
     {
-        return $this->hasMany(HotelOperationsChecklist::class);
+        return $this->assetOperationsChecklists();
     }
 }

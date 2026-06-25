@@ -178,7 +178,7 @@ class ResolveOfferingOutcomeActionTest extends TestCase
         $this->assertSame($counts['events'], FundingEvent::count());
     }
 
-    public function test_funded_hotel_creates_decidim_assembly_and_default_components(): void
+    public function test_funded_asset_creates_decidim_assembly_and_default_components(): void
     {
         config(['decidim.enabled' => true, 'decidim.dry_run' => false, 'decidim.base_url' => 'https://decidim.test', 'decidim.api_token' => 'test-token', 'decidim.organization_id' => 'org_1']);
         Http::fake(function ($request) {
@@ -190,7 +190,7 @@ class ResolveOfferingOutcomeActionTest extends TestCase
             if (str_contains($url, '/proposals')) return Http::response(['id' => 'proposal_1']);
             if (str_contains($url, '/meetings')) return Http::response(['id' => 'meeting_1']);
             if (str_contains($url, '/components')) return Http::response(['id' => 'component_'.count(Http::recorded())]);
-            return Http::response(['id' => 'assembly_123', 'slug' => 'hotel-1-test-property', 'url' => 'https://decidim.test/assemblies/hotel-1-test-property']);
+            return Http::response(['id' => 'assembly_123', 'slug' => 'asset-1-test-property', 'url' => 'https://decidim.test/assemblies/asset-1-test-property']);
         });
         $offering = $this->offering(target: 100000, localPct: 0, localCount: 1);
         $this->bid($offering, 100, 50000, true);

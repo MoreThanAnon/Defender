@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Investment;
 use App\Models\DecidimGovernanceSpace;
 use App\Models\DecidimGovernanceSync;
-use App\Models\HotelOperationsChecklist;
+use App\Models\AssetOperationsChecklist;
 use App\Models\Offering;
 use App\Models\Property;
 use App\Models\User;
@@ -61,8 +61,8 @@ class AdminController extends Controller
                 'class' => 'info',
             ],
             [
-                'label' => 'Hotel Operations',
-                'description' => 'Track bank balance, bills, maintenance, meetings, proposals and legal-review items.',
+                'label' => 'Asset Operations',
+                'description' => 'Track cash, bills, tasks, meetings, proposals and legal-review items for any funded asset.',
                 'url' => route('admin.operations.index'),
                 'class' => 'dark',
             ],
@@ -150,16 +150,16 @@ class AdminController extends Controller
 
     public function operations()
     {
-        $offerings = Offering::with(['property', 'decidimGovernanceSpace', 'hotelOperationsChecklist'])
+        $offerings = Offering::with(['property', 'decidimGovernanceSpace', 'assetOperationsChecklist'])
             ->where('status', 'SETTLED')
             ->orderByDesc('updated_at')
             ->paginate(15);
 
         $summary = [
             'settled' => Offering::where('status', 'SETTLED')->count(),
-            'checklists' => HotelOperationsChecklist::count(),
-            'reviewed' => HotelOperationsChecklist::whereNotNull('reviewed_at')->count(),
-            'legal_pending' => HotelOperationsChecklist::where(function ($query) {
+            'checklists' => AssetOperationsChecklist::count(),
+            'reviewed' => AssetOperationsChecklist::whereNotNull('reviewed_at')->count(),
+            'legal_pending' => AssetOperationsChecklist::where(function ($query) {
                 $query->whereNull('legal_review')
                     ->orWhereJsonContains('legal_review->solicitor_review', false)
                     ->orWhereJsonContains('legal_review->central_bank_review', false)
@@ -176,7 +176,7 @@ class AdminController extends Controller
     {
         abort_unless($offering->status === 'SETTLED', 404);
 
-        $checklist = HotelOperationsChecklist::firstOrCreate(
+        $checklist = AssetOperationsChecklist::firstOrCreate(
             ['offering_id' => $offering->id],
             [
                 'property_id' => $offering->property_id,
@@ -223,7 +223,7 @@ class AdminController extends Controller
             'legal_review' => ['array'],
         ]);
 
-        $checklist = HotelOperationsChecklist::firstOrCreate(
+        $checklist = AssetOperationsChecklist::firstOrCreate(
             ['offering_id' => $offering->id],
             ['property_id' => $offering->property_id]
         );
@@ -242,7 +242,7 @@ class AdminController extends Controller
 
         return redirect()
             ->route('admin.operations.show', $offering)
-            ->with('success', 'Hotel operations checklist updated.');
+            ->with('success', 'Asset operations checklist updated.');
     }
 
     private function linesToChecklist(string $value): array

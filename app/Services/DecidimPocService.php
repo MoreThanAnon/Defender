@@ -110,7 +110,7 @@ class DecidimPocService
             ->timeout(20)
             ->post($this->endpoint('/api/property_governance/assemblies'), [
                 'title' => 'TEST HOTEL GOVERNANCE',
-                'slug' => 'test-hotel-governance',
+                'slug' => 'test-asset-governance',
                 'description' => 'Created from Laravel POC connection test.',
             ]);
 

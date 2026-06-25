@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\HotelOperationsChecklist;
+use App\Models\AssetOperationsChecklist;
 use App\Models\Offering;
 use App\Models\Property;
 use App\Models\User;
@@ -22,7 +22,7 @@ class AdminOperationsChecklistTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.operations.index'))
             ->assertOk()
-            ->assertSee('Hotel Operations')
+            ->assertSee('Asset Operations')
             ->assertSee('Legal review pending')
             ->assertSee($offering->name);
 
@@ -31,9 +31,9 @@ class AdminOperationsChecklistTest extends TestCase
             ->assertOk()
             ->assertSee('Operating snapshot')
             ->assertSee('Legal / compliance review placeholders')
-            ->assertSee('Save operations checklist');
+            ->assertSee('Save asset operations checklist');
 
-        $this->assertDatabaseHas('hotel_operations_checklists', [
+        $this->assertDatabaseHas('asset_operations_checklists', [
             'offering_id' => $offering->id,
             'property_id' => $offering->property_id,
         ]);
@@ -72,7 +72,7 @@ class AdminOperationsChecklistTest extends TestCase
             ])
             ->assertRedirect(route('admin.operations.show', $offering));
 
-        $checklist = HotelOperationsChecklist::where('offering_id', $offering->id)->firstOrFail();
+        $checklist = AssetOperationsChecklist::where('offering_id', $offering->id)->firstOrFail();
 
         $this->assertSame('12345.67', $checklist->bank_balance);
         $this->assertSame('Electricity invoice due Friday', $checklist->bills_due[0]['label']);
@@ -89,7 +89,7 @@ class AdminOperationsChecklistTest extends TestCase
             ['id' => '1', 'status' => 'Active', 'description' => 'Test active status'],
         ]);
 
-        $property = Property::factory()->create(['name' => 'Operations Hotel']);
+        $property = Property::factory()->create(['name' => 'Operations Asset']);
 
         return Offering::create([
             'property_id' => $property->id,

@@ -95,7 +95,7 @@
                                     </li>
                                     <li>
                                         <a class="dropdown-item {{ Request::routeIs('admin.operations.*') ? 'active' : '' }}" href="{{ route('admin.operations.index') }}">
-                                            Hotel Operations
+                                            Asset Operations
                                         </a>
                                     </li>
                                 @endif

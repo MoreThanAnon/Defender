@@ -4,8 +4,8 @@
 <div class="container mt-5">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
-            <h1 class="mb-1">Hotel Operations</h1>
-            <p class="text-muted mb-0">MVP operating checklist for settled hotel/property offerings.</p>
+            <h1 class="mb-1">Asset Operations</h1>
+            <p class="text-muted mb-0">MVP operating checklist for any settled asset: rental house, shop, land, hotel, or other buyable business/property.</p>
         </div>
         <a href="{{ route('admin.dashboard') }}" class="btn btn-outline-secondary">Back to Admin</a>
     </div>
@@ -36,7 +36,7 @@
 
     <div class="card shadow-sm">
         <div class="card-header bg-white">
-            <h5 class="mb-0">Settled hotel/property operations</h5>
+            <h5 class="mb-0">Settled asset operations</h5>
         </div>
         <div class="table-responsive">
             <table class="table table-sm align-middle mb-0">
@@ -65,13 +65,13 @@
                                 @endif
                             </td>
                             <td>
-                                @if($offering->hotelOperationsChecklist)
+                                @if($offering->assetOperationsChecklist)
                                     <span class="badge bg-success">Started</span>
                                 @else
                                     <span class="badge bg-warning">Not started</span>
                                 @endif
                             </td>
-                            <td>{{ $offering->hotelOperationsChecklist?->reviewed_at?->diffForHumans() ?? '—' }}</td>
+                            <td>{{ $offering->assetOperationsChecklist?->reviewed_at?->diffForHumans() ?? '—' }}</td>
                             <td class="text-end">
                                 <a href="{{ route('admin.operations.show', $offering) }}" class="btn btn-primary btn-sm">
                                     Open checklist

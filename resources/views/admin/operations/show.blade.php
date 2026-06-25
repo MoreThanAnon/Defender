@@ -12,7 +12,7 @@
 <div class="container mt-5">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
-            <h1 class="mb-1">{{ $offering->property?->name ?? 'Hotel' }} Operations</h1>
+            <h1 class="mb-1">{{ $offering->property?->name ?? 'Asset' }} Operations</h1>
             <p class="text-muted mb-0">Offering #{{ $offering->id }} — {{ $offering->name }}</p>
         </div>
         <a href="{{ route('admin.operations.index') }}" class="btn btn-outline-secondary">Back to Operations</a>
@@ -24,7 +24,7 @@
 
     <div class="alert alert-warning">
         <strong>Human review required:</strong>
-        do not mark this investment/property structure as legally compliant from this checklist.
+        do not mark this investment, asset, property, or business structure as legally compliant from this checklist.
         Use it to prepare solicitor, Central Bank/regulatory, company law, tax, investor-rights,
         AML/KYC, data-protection, and property-ownership reviews.
     </div>
@@ -78,14 +78,14 @@
                                placeholder="0.00">
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label class="form-label">Bills due</label>
+                        <label class="form-label">Bills / costs due</label>
                         <textarea name="bills_due_text" class="form-control" rows="5"
-                                  placeholder="One bill per line, e.g. Electricity invoice due Friday">{{ old('bills_due_text', $billLines) }}</textarea>
+                                  placeholder="One cost per line, e.g. rent roll issue, insurance renewal, rates, loan payment, utility bill">{{ old('bills_due_text', $billLines) }}</textarea>
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label class="form-label">Maintenance tasks</label>
+                        <label class="form-label">Asset tasks / maintenance / due diligence</label>
                         <textarea name="maintenance_tasks_text" class="form-control" rows="5"
-                                  placeholder="One task per line, e.g. Repair boiler / inspect roof">{{ old('maintenance_tasks_text', $maintenanceLines) }}</textarea>
+                                  placeholder="One task per line, e.g. repair boiler, inspect roof, review lease, planning search, stock/fit-out check">{{ old('maintenance_tasks_text', $maintenanceLines) }}</textarea>
                     </div>
                 </div>
             </div>
@@ -176,7 +176,7 @@
             </div>
         </div>
 
-        <button type="submit" class="btn btn-primary">Save operations checklist</button>
+        <button type="submit" class="btn btn-primary">Save asset operations checklist</button>
     </form>
 </div>
 @endsection
