@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Actions\Offerings\ResolveOfferingOutcomeAction;
 use App\Models\Bid;
 use App\Models\DecidimGovernanceSync;
+use App\Models\DecidimGovernanceSpace;
 use App\Models\EquityPosition;
 use App\Models\FundingEvent;
 use App\Models\Investment;
@@ -15,6 +16,7 @@ use App\Models\RefundRecord;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class ResolveOfferingOutcomeActionTest extends TestCase
@@ -24,6 +26,7 @@ class ResolveOfferingOutcomeActionTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        config(['decidim.enabled' => false]);
 
         DB::table('properties_status')->insertOrIgnore([
             ['id' => '1', 'status' => 'Active', 'description' => 'Test active status'],
@@ -173,6 +176,46 @@ class ResolveOfferingOutcomeActionTest extends TestCase
         $this->assertSame($counts['loan_notes'], LoanNote::count());
         $this->assertSame($counts['refunds'], RefundRecord::count());
         $this->assertSame($counts['events'], FundingEvent::count());
+    }
+
+    public function test_funded_hotel_creates_decidim_assembly_and_default_components(): void
+    {
+        config(['decidim.enabled' => true, 'decidim.dry_run' => false, 'decidim.base_url' => 'https://decidim.test', 'decidim.api_token' => 'test-token', 'decidim.organization_id' => 'org_1']);
+        Http::fake(function ($request) {
+            $url = $request->url();
+            if (str_contains($url, '/users')) return Http::response(['decidim_user_id' => 'decidim_user_'.$request['laravel_user_id'], 'created' => true]);
+            if (str_contains($url, '/members')) return Http::response(['id' => 'member_'.$request['laravel_user_id'], 'decidim_user_id' => 'decidim_user_'.$request['laravel_user_id']]);
+            if (str_contains($url, '/taxonomies')) return Http::response(['id' => 'taxonomy_1']);
+            if (str_contains($url, '/debates')) return Http::response(['id' => 'debate_1']);
+            if (str_contains($url, '/proposals')) return Http::response(['id' => 'proposal_1']);
+            if (str_contains($url, '/meetings')) return Http::response(['id' => 'meeting_1']);
+            if (str_contains($url, '/components')) return Http::response(['id' => 'component_'.count(Http::recorded())]);
+            return Http::response(['id' => 'assembly_123', 'slug' => 'hotel-1-test-property', 'url' => 'https://decidim.test/assemblies/hotel-1-test-property']);
+        });
+        $offering = $this->offering(target: 100000, localPct: 0, localCount: 1);
+        $this->bid($offering, 100, 50000, true);
+        $this->bid($offering, 101, 50000, false);
+
+        $resolved = $this->resolve($offering);
+        $space = DecidimGovernanceSpace::where('offering_id', $offering->id)->firstOrFail();
+
+        $this->assertSame('SETTLED', $resolved->status);
+        $this->assertSame('created', $space->status);
+        $this->assertSame('assembly_123', $space->decidim_assembly_id);
+        $this->assertNotNull($space->decidim_debates_component_id);
+        $this->assertNotNull($space->decidim_proposals_component_id);
+        $this->assertNotNull($space->decidim_meetings_component_id);
+        $this->assertNotNull($space->decidim_voting_component_id);
+        $this->assertSame(5, DecidimGovernanceSync::count());
+        $this->assertDatabaseHas('decidim_governance_syncs', ['investor_id' => 100, 'role' => 'local_equity_voter', 'can_vote' => true]);
+        $this->assertDatabaseHas('decidim_governance_syncs', ['investor_id' => 100, 'role' => 'non_voting_lender', 'can_vote' => false]);
+        $this->assertDatabaseHas('decidim_governance_syncs', ['investor_id' => 101, 'role' => 'non_voting_lender', 'can_vote' => false]);
+        Http::assertSent(fn ($request) => str_contains($request->url(), '/users') && $request['email'] && $request['name'] && $request['laravel_user_id'] === '100');
+        Http::assertSent(fn ($request) => str_contains($request->url(), '/members') && $request['role'] === 'local_equity_voter' && $request['metadata']['can_vote'] === true);
+        Http::assertSentCount(14);
+        $this->resolve($resolved->fresh());
+        $this->assertSame(1, DecidimGovernanceSpace::count());
+        $this->assertSame(14, Http::recorded()->count());
     }
 
     private function offering(int $target, int $localPct = 25, int $localCount = 3): Offering

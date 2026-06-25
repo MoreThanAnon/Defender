@@ -6,6 +6,7 @@ use App\Models\Bid;
 use App\Models\EquityClass;
 use App\Models\Offering;
 use App\Models\User;
+use App\Events\OfferingSettled;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -25,7 +26,7 @@ class ResolveOfferingOutcomeAction
 
     public function handle(Offering $offering, ?int $equityClassId = null, ?int $orgUserId = null): Offering
     {
-        return DB::transaction(function () use ($offering, $equityClassId, $orgUserId) {
+        $resolved = DB::transaction(function () use ($offering, $equityClassId, $orgUserId) {
             $locked = Offering::whereKey($offering->id)->lockForUpdate()->firstOrFail();
 
             if (in_array($locked->status, ['SETTLED', 'FAILED', 'REFUND_PENDING', 'REFUNDED', 'CANCELLED'], true)) {
@@ -61,6 +62,8 @@ class ResolveOfferingOutcomeAction
 
             return $locked->fresh();
         });
+        if ($resolved->status === 'SETTLED') event(new OfferingSettled($resolved));
+        return $resolved;
     }
 
     private function failOffering(Offering $offering, array $eligibility): Offering

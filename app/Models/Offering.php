@@ -83,4 +83,9 @@ class Offering extends Model
     {
         return $this->hasMany(RefundRecord::class);
     }
+
+    public function decidimGovernanceSpace()
+    {
+        return $this->hasOne(DecidimGovernanceSpace::class);
+    }
 }
