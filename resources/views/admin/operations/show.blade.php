@@ -3,6 +3,7 @@
 @php
     $billLines = collect($checklist->bills_due ?? [])->pluck('label')->implode("\n");
     $maintenanceLines = collect($checklist->maintenance_tasks ?? [])->pluck('label')->implode("\n");
+    $requiredDocuments = $checklist->required_documents ?? [];
     $meetingStatus = $checklist->meeting_status ?? [];
     $proposalStatus = $checklist->proposal_status ?? [];
     $legalReview = $checklist->legal_review ?? [];
@@ -87,6 +88,36 @@
                         <textarea name="maintenance_tasks_text" class="form-control" rows="5"
                                   placeholder="One task per line, e.g. repair boiler, inspect roof, review lease, planning search, stock/fit-out check">{{ old('maintenance_tasks_text', $maintenanceLines) }}</textarea>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Required asset documents</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    Tick these only when the document or evidence has been gathered for this specific asset.
+                    These examples are intentionally asset-neutral, so the same workflow can cover rental houses,
+                    shops, land, businesses, equipment, or any other fundable purchase.
+                </p>
+                <div class="row">
+                    @foreach($assetDocumentItems as $key => $item)
+                        <div class="col-md-6 mb-3">
+                            <div class="border rounded p-3 h-100">
+                                <div class="form-check">
+                                    <input type="hidden" name="required_documents[{{ $key }}]" value="0">
+                                    <input class="form-check-input" type="checkbox" name="required_documents[{{ $key }}]" value="1" id="document_{{ $key }}"
+                                           @checked(old("required_documents.$key", $requiredDocuments[$key] ?? false))>
+                                    <label class="form-check-label fw-semibold" for="document_{{ $key }}">
+                                        {{ $item['label'] }}
+                                    </label>
+                                </div>
+                                <div class="text-muted small mt-2">{{ $item['description'] }}</div>
+                            </div>
+                        </div>
+                    @endforeach
                 </div>
             </div>
         </div>

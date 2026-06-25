@@ -33,6 +33,10 @@ class AdminOperationsChecklistTest extends TestCase
             ->get(route('admin.operations.show', $offering))
             ->assertOk()
             ->assertSee('Operating snapshot')
+            ->assertSee('Required asset documents')
+            ->assertSee('Asset identity and description')
+            ->assertSee('rental house')
+            ->assertSee('shop unit')
             ->assertSee('Legal / compliance review placeholders')
             ->assertSee('Save asset operations checklist');
 
@@ -52,6 +56,18 @@ class AdminOperationsChecklistTest extends TestCase
                 'bank_balance' => '12345.67',
                 'bills_due_text' => "Electricity invoice due Friday\nInsurance renewal",
                 'maintenance_tasks_text' => "Inspect boiler\nRepair roof leak",
+                'required_documents' => [
+                    'asset_identity' => '1',
+                    'ownership_or_title' => '1',
+                    'valuation_or_price_support' => '0',
+                    'acquisition_agreement' => '1',
+                    'income_or_use_plan' => '0',
+                    'costs_and_liabilities' => '1',
+                    'insurance_and_risk' => '0',
+                    'regulatory_permissions' => '0',
+                    'governance_and_investor_rights' => '0',
+                    'tax_and_structure_review' => '0',
+                ],
                 'meeting_status' => [
                     'first_meeting_scheduled' => '1',
                     'agenda_published' => '0',
@@ -79,11 +95,19 @@ class AdminOperationsChecklistTest extends TestCase
 
         $this->assertSame('12345.67', $checklist->bank_balance);
         $this->assertSame('Electricity invoice due Friday', $checklist->bills_due[0]['label']);
+        $this->assertTrue($checklist->required_documents['asset_identity']);
+        $this->assertTrue($checklist->required_documents['ownership_or_title']);
+        $this->assertFalse($checklist->required_documents['valuation_or_price_support']);
         $this->assertTrue($checklist->meeting_status['first_meeting_scheduled']);
         $this->assertTrue($checklist->proposal_status['operating_plan_proposed']);
         $this->assertTrue($checklist->legal_review['solicitor_review']);
         $this->assertFalse($checklist->legal_review['central_bank_review']);
         $this->assertNotNull($checklist->reviewed_at);
+
+        $this->actingAs($admin)
+            ->get(route('admin.operations.index'))
+            ->assertOk()
+            ->assertSee('Asset document pack incomplete');
     }
 
     private function settledOffering(): Offering

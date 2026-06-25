@@ -39,6 +39,27 @@ class AssetHealthService
             $alerts[] = ['level' => 'warning', 'label' => 'Bank/cash balance missing'];
         }
 
+        $documents = $checklist->required_documents ?? [];
+        $requiredDocuments = [
+            'asset_identity',
+            'ownership_or_title',
+            'valuation_or_price_support',
+            'acquisition_agreement',
+            'income_or_use_plan',
+            'costs_and_liabilities',
+            'insurance_and_risk',
+            'regulatory_permissions',
+            'governance_and_investor_rights',
+            'tax_and_structure_review',
+        ];
+
+        foreach ($requiredDocuments as $key) {
+            if (! ($documents[$key] ?? false)) {
+                $alerts[] = ['level' => 'warning', 'label' => 'Asset document pack incomplete'];
+                break;
+            }
+        }
+
         $meeting = $checklist->meeting_status ?? [];
         if (! ($meeting['first_meeting_scheduled'] ?? false)) {
             $alerts[] = ['level' => 'warning', 'label' => 'First investor meeting not scheduled'];

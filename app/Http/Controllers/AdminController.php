@@ -188,6 +188,7 @@ class AdminController extends Controller
                 'property_id' => $offering->property_id,
                 'bills_due' => [],
                 'maintenance_tasks' => [],
+                'required_documents' => $this->emptyAssetDocumentChecklist(),
                 'meeting_status' => [
                     'first_meeting_scheduled' => false,
                     'agenda_published' => false,
@@ -211,8 +212,9 @@ class AdminController extends Controller
         );
 
         $offering->load(['property', 'decidimGovernanceSpace', 'equityPositions', 'loanNotes']);
+        $assetDocumentItems = $this->assetDocumentChecklistItems();
 
-        return view('admin.operations.show', compact('offering', 'checklist'));
+        return view('admin.operations.show', compact('offering', 'checklist', 'assetDocumentItems'));
     }
 
     public function updateOperations(Request $request, Offering $offering)
@@ -224,6 +226,7 @@ class AdminController extends Controller
             'bills_due_text' => ['nullable', 'string'],
             'maintenance_tasks_text' => ['nullable', 'string'],
             'admin_notes' => ['nullable', 'string'],
+            'required_documents' => ['array'],
             'meeting_status' => ['array'],
             'proposal_status' => ['array'],
             'legal_review' => ['array'],
@@ -239,6 +242,7 @@ class AdminController extends Controller
             'bank_balance' => $data['bank_balance'] ?? null,
             'bills_due' => $this->linesToChecklist($data['bills_due_text'] ?? ''),
             'maintenance_tasks' => $this->linesToChecklist($data['maintenance_tasks_text'] ?? ''),
+            'required_documents' => $this->booleanMap($data['required_documents'] ?? []),
             'meeting_status' => $this->booleanMap($data['meeting_status'] ?? []),
             'proposal_status' => $this->booleanMap($data['proposal_status'] ?? []),
             'legal_review' => $this->booleanMap($data['legal_review'] ?? []),
@@ -264,6 +268,62 @@ class AdminController extends Controller
     private function booleanMap(array $values): array
     {
         return collect($values)->map(fn ($value) => filter_var($value, FILTER_VALIDATE_BOOLEAN))->all();
+    }
+
+    private function emptyAssetDocumentChecklist(): array
+    {
+        return collect(array_keys($this->assetDocumentChecklistItems()))
+            ->mapWithKeys(fn (string $key) => [$key => false])
+            ->all();
+    }
+
+    /**
+     * @return array<string,array{label:string,description:string}>
+     */
+    private function assetDocumentChecklistItems(): array
+    {
+        return [
+            'asset_identity' => [
+                'label' => 'Asset identity and description',
+                'description' => 'Plain-English description of what is being bought or funded, such as a rental house, shop unit, land parcel, business, vehicle, equipment, or other asset.',
+            ],
+            'ownership_or_title' => [
+                'label' => 'Ownership / title / seller authority',
+                'description' => 'Evidence that the seller or vendor can sell it, for example title documents, land registry details, company ownership records, asset register entry, or sale authority.',
+            ],
+            'valuation_or_price_support' => [
+                'label' => 'Valuation or price support',
+                'description' => 'Independent valuation, survey, comparables, quote, invoice, book value, broker note, or other evidence explaining why the purchase price makes sense.',
+            ],
+            'acquisition_agreement' => [
+                'label' => 'Acquisition agreement / heads of terms',
+                'description' => 'Draft or signed contract, heads of terms, purchase order, lease assignment, share purchase agreement, or equivalent deal document.',
+            ],
+            'income_or_use_plan' => [
+                'label' => 'Income or use plan',
+                'description' => 'How the asset is expected to make money or create value, for example rent assumptions, shop trading plan, land development route, resale plan, or operating forecast.',
+            ],
+            'costs_and_liabilities' => [
+                'label' => 'Costs, debts, and liabilities',
+                'description' => 'Known costs such as rates, service charges, insurance, utilities, repairs, debt, taxes, wages, supplier liabilities, or other obligations attached to the asset.',
+            ],
+            'insurance_and_risk' => [
+                'label' => 'Insurance and risk review',
+                'description' => 'Insurance quote/policy and risk notes for damage, vacancy, tenant default, planning risk, trading risk, market risk, or asset-specific operational risk.',
+            ],
+            'regulatory_permissions' => [
+                'label' => 'Regulatory permissions / licences',
+                'description' => 'Planning permission, fire certs, food/shop licences, tenancy compliance, environmental checks, crowdfunding permissions, or any other approval needed before use.',
+            ],
+            'governance_and_investor_rights' => [
+                'label' => 'Governance and investor rights pack',
+                'description' => 'Documents explaining who controls decisions, voting rights, exit rights, profit distribution, conflicts, investor updates, and how Decidim governance will be used.',
+            ],
+            'tax_and_structure_review' => [
+                'label' => 'Tax and legal structure review',
+                'description' => 'Notes for solicitor/accountant review covering SPV/company structure, tax treatment, ownership, investor rights, and Irish regulatory review. This is a reminder, not compliance approval.',
+            ],
+        ];
     }
 
     public function impersonate(Request $request)
