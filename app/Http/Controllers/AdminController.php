@@ -170,6 +170,8 @@ class AdminController extends Controller
             'with_health_alerts' => $healthAlerts->filter(fn (array $alerts) => $alerts !== [])->count(),
             'uploaded_documents' => AssetDocument::count(),
             'documents_needing_review' => AssetDocument::where('review_status', 'needs_review')->count(),
+            'documents_reviewed' => AssetDocument::where('review_status', 'reviewed')->count(),
+            'documents_changes_needed' => AssetDocument::where('review_status', 'changes_needed')->count(),
             'legal_pending' => AssetOperationsChecklist::where(function ($query) {
                 $query->whereNull('legal_review')
                     ->orWhereJsonContains('legal_review->solicitor_review', false)
@@ -315,6 +317,26 @@ class AdminController extends Controller
         abort_unless(Storage::disk($document->disk)->exists($document->path), 404);
 
         return Storage::disk($document->disk)->download($document->path, $document->original_filename);
+    }
+
+    public function updateAssetDocumentReview(Request $request, Offering $offering, AssetDocument $document)
+    {
+        abort_unless($offering->status === 'SETTLED' && (int) $document->offering_id === (int) $offering->id, 404);
+
+        $data = $request->validate([
+            'review_status' => ['required', 'string', Rule::in(['needs_review', 'reviewed', 'changes_needed'])],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        $document->update([
+            'review_status' => $data['review_status'],
+            'notes' => $data['notes'] ?? $document->notes,
+            'reviewed_at' => $data['review_status'] === 'reviewed' ? now() : null,
+        ]);
+
+        return redirect()
+            ->route('admin.operations.show', $offering)
+            ->with('success', 'Asset document review status updated.');
     }
 
     public function deleteAssetDocument(Offering $offering, AssetDocument $document)

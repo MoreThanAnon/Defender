@@ -29,6 +29,8 @@ class AdminOperationsChecklistTest extends TestCase
             ->assertSee('With health alerts')
             ->assertSee('Uploaded documents')
             ->assertSee('Documents needing review')
+            ->assertSee('Documents reviewed')
+            ->assertSee('Documents changes needed')
             ->assertSee('No Decidim governance space')
             ->assertSee('No investor roles synced')
             ->assertSee($offering->name);
@@ -152,8 +154,37 @@ class AdminOperationsChecklistTest extends TestCase
             ->get(route('admin.operations.show', $offering))
             ->assertOk()
             ->assertSee('Independent valuation')
-            ->assertSee('needs review')
+            ->assertSee('Needs review')
             ->assertSee('valuation.pdf');
+
+        $this->actingAs($admin)
+            ->patch(route('admin.operations.documents.update', [$offering, $document]), [
+                'review_status' => 'reviewed',
+                'notes' => 'Accountant reviewed the valuation support.',
+            ])
+            ->assertRedirect(route('admin.operations.show', $offering));
+
+        $document->refresh();
+        $this->assertSame('reviewed', $document->review_status);
+        $this->assertSame('Accountant reviewed the valuation support.', $document->notes);
+        $this->assertNotNull($document->reviewed_at);
+
+        $this->actingAs($admin)
+            ->patch(route('admin.operations.documents.update', [$offering, $document]), [
+                'review_status' => 'changes_needed',
+                'notes' => 'Need a signed valuation letter.',
+            ])
+            ->assertRedirect(route('admin.operations.show', $offering));
+
+        $document->refresh();
+        $this->assertSame('changes_needed', $document->review_status);
+        $this->assertSame('Need a signed valuation letter.', $document->notes);
+        $this->assertNull($document->reviewed_at);
+
+        $this->actingAs($admin)
+            ->get(route('admin.operations.index'))
+            ->assertOk()
+            ->assertSee('Document changes needed');
 
         $this->actingAs($admin)
             ->delete(route('admin.operations.documents.destroy', [$offering, $document]))

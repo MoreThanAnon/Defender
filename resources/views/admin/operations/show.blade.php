@@ -170,7 +170,28 @@
                                         <div>{{ $document->original_filename }}</div>
                                         <div class="text-muted small">{{ number_format($document->size_bytes / 1024, 1) }} KB</div>
                                     </td>
-                                    <td><span class="badge bg-warning text-dark">{{ str_replace('_', ' ', $document->review_status) }}</span></td>
+                                    <td style="min-width: 220px;">
+                                        <form method="POST" action="{{ route('admin.operations.documents.update', [$offering, $document]) }}">
+                                            @csrf
+                                            @method('PATCH')
+                                            <select name="review_status" class="form-select form-select-sm mb-2">
+                                                @foreach([
+                                                    'needs_review' => 'Needs review',
+                                                    'reviewed' => 'Reviewed',
+                                                    'changes_needed' => 'Changes needed',
+                                                ] as $status => $label)
+                                                    <option value="{{ $status }}" @selected($document->review_status === $status)>{{ $label }}</option>
+                                                @endforeach
+                                            </select>
+                                            <input type="text" name="notes" class="form-control form-control-sm mb-2"
+                                                   value="{{ $document->notes }}"
+                                                   placeholder="Reviewer note">
+                                            <button type="submit" class="btn btn-outline-primary btn-sm">Update review</button>
+                                            @if($document->reviewed_at)
+                                                <div class="text-muted small mt-1">Reviewed {{ $document->reviewed_at->diffForHumans() }}</div>
+                                            @endif
+                                        </form>
+                                    </td>
                                     <td>
                                         {{ $document->created_at?->diffForHumans() }}
                                         @if($document->uploader)

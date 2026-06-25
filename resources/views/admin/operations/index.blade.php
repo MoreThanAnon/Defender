@@ -24,6 +24,8 @@
             'With health alerts' => $summary['with_health_alerts'],
             'Uploaded documents' => $summary['uploaded_documents'],
             'Documents needing review' => $summary['documents_needing_review'],
+            'Documents reviewed' => $summary['documents_reviewed'],
+            'Documents changes needed' => $summary['documents_changes_needed'],
             'Legal review pending' => $summary['legal_pending'],
         ] as $label => $value)
             <div class="col-md-3 mb-3">

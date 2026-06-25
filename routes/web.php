@@ -141,5 +141,6 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::post('/operations/offerings/{offering}', [AdminController::class, 'updateOperations'])->name('admin.operations.update');
     Route::post('/operations/offerings/{offering}/documents', [AdminController::class, 'uploadAssetDocument'])->name('admin.operations.documents.store');
     Route::get('/operations/offerings/{offering}/documents/{document}', [AdminController::class, 'downloadAssetDocument'])->name('admin.operations.documents.download');
+    Route::patch('/operations/offerings/{offering}/documents/{document}', [AdminController::class, 'updateAssetDocumentReview'])->name('admin.operations.documents.update');
     Route::delete('/operations/offerings/{offering}/documents/{document}', [AdminController::class, 'deleteAssetDocument'])->name('admin.operations.documents.destroy');
 });

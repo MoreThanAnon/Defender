@@ -60,6 +60,14 @@ class AssetHealthService
             }
         }
 
+        if ($offering->assetDocuments()->where('review_status', 'needs_review')->exists()) {
+            $alerts[] = ['level' => 'warning', 'label' => 'Documents need review'];
+        }
+
+        if ($offering->assetDocuments()->where('review_status', 'changes_needed')->exists()) {
+            $alerts[] = ['level' => 'danger', 'label' => 'Document changes needed'];
+        }
+
         $meeting = $checklist->meeting_status ?? [];
         if (! ($meeting['first_meeting_scheduled'] ?? false)) {
             $alerts[] = ['level' => 'warning', 'label' => 'First investor meeting not scheduled'];
