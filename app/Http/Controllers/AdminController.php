@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Investment;
 use App\Models\DecidimGovernanceSpace;
 use App\Models\DecidimGovernanceSync;
+use App\Models\AssetDocument;
 use App\Models\AssetOperationsChecklist;
 use App\Models\Offering;
 use App\Models\Property;
@@ -15,6 +16,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class AdminController extends Controller
 {
@@ -165,6 +168,8 @@ class AdminController extends Controller
             'checklists' => AssetOperationsChecklist::count(),
             'reviewed' => AssetOperationsChecklist::whereNotNull('reviewed_at')->count(),
             'with_health_alerts' => $healthAlerts->filter(fn (array $alerts) => $alerts !== [])->count(),
+            'uploaded_documents' => AssetDocument::count(),
+            'documents_needing_review' => AssetDocument::where('review_status', 'needs_review')->count(),
             'legal_pending' => AssetOperationsChecklist::where(function ($query) {
                 $query->whereNull('legal_review')
                     ->orWhereJsonContains('legal_review->solicitor_review', false)
@@ -211,7 +216,7 @@ class AdminController extends Controller
             ]
         );
 
-        $offering->load(['property', 'decidimGovernanceSpace', 'equityPositions', 'loanNotes']);
+        $offering->load(['property', 'decidimGovernanceSpace', 'equityPositions', 'loanNotes', 'assetDocuments.uploader']);
         $assetDocumentItems = $this->assetDocumentChecklistItems();
 
         return view('admin.operations.show', compact('offering', 'checklist', 'assetDocumentItems'));
@@ -253,6 +258,75 @@ class AdminController extends Controller
         return redirect()
             ->route('admin.operations.show', $offering)
             ->with('success', 'Asset operations checklist updated.');
+    }
+
+    public function uploadAssetDocument(Request $request, Offering $offering)
+    {
+        abort_unless($offering->status === 'SETTLED', 404);
+
+        $documentItems = $this->assetDocumentChecklistItems();
+
+        $data = $request->validate([
+            'document_key' => ['required', 'string', Rule::in(array_keys($documentItems))],
+            'title' => ['nullable', 'string', 'max:255'],
+            'notes' => ['nullable', 'string'],
+            'document' => ['required', 'file', 'max:10240', 'mimes:pdf,doc,docx,xls,xlsx,csv,jpg,jpeg,png,txt'],
+        ]);
+
+        $file = $request->file('document');
+        $path = $file->store("asset-documents/offering-{$offering->id}", 'local');
+
+        AssetDocument::create([
+            'offering_id' => $offering->id,
+            'property_id' => $offering->property_id,
+            'uploaded_by' => Auth::id(),
+            'document_key' => $data['document_key'],
+            'title' => $data['title'] ?: $documentItems[$data['document_key']]['label'],
+            'notes' => $data['notes'] ?? null,
+            'disk' => 'local',
+            'path' => $path,
+            'original_filename' => $file->getClientOriginalName(),
+            'mime_type' => $file->getClientMimeType(),
+            'size_bytes' => $file->getSize() ?: 0,
+            'review_status' => 'needs_review',
+        ]);
+
+        $checklist = AssetOperationsChecklist::firstOrCreate(
+            ['offering_id' => $offering->id],
+            ['property_id' => $offering->property_id]
+        );
+
+        $requiredDocuments = $checklist->required_documents ?? $this->emptyAssetDocumentChecklist();
+        $requiredDocuments[$data['document_key']] = true;
+        $checklist->update([
+            'property_id' => $offering->property_id,
+            'required_documents' => $requiredDocuments,
+            'reviewed_at' => now(),
+        ]);
+
+        return redirect()
+            ->route('admin.operations.show', $offering)
+            ->with('success', 'Asset document uploaded. It still needs human review.');
+    }
+
+    public function downloadAssetDocument(Offering $offering, AssetDocument $document)
+    {
+        abort_unless($offering->status === 'SETTLED' && (int) $document->offering_id === (int) $offering->id, 404);
+        abort_unless(Storage::disk($document->disk)->exists($document->path), 404);
+
+        return Storage::disk($document->disk)->download($document->path, $document->original_filename);
+    }
+
+    public function deleteAssetDocument(Offering $offering, AssetDocument $document)
+    {
+        abort_unless($offering->status === 'SETTLED' && (int) $document->offering_id === (int) $offering->id, 404);
+
+        Storage::disk($document->disk)->delete($document->path);
+        $document->delete();
+
+        return redirect()
+            ->route('admin.operations.show', $offering)
+            ->with('success', 'Asset document deleted.');
     }
 
     private function linesToChecklist(string $value): array

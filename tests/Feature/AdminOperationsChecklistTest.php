@@ -8,6 +8,8 @@ use App\Models\Property;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AdminOperationsChecklistTest extends TestCase
@@ -25,6 +27,8 @@ class AdminOperationsChecklistTest extends TestCase
             ->assertSee('Asset Operations')
             ->assertSee('Legal review pending')
             ->assertSee('With health alerts')
+            ->assertSee('Uploaded documents')
+            ->assertSee('Documents needing review')
             ->assertSee('No Decidim governance space')
             ->assertSee('No investor roles synced')
             ->assertSee($offering->name);
@@ -33,6 +37,7 @@ class AdminOperationsChecklistTest extends TestCase
             ->get(route('admin.operations.show', $offering))
             ->assertOk()
             ->assertSee('Operating snapshot')
+            ->assertSee('Uploaded asset documents')
             ->assertSee('Required asset documents')
             ->assertSee('Asset identity and description')
             ->assertSee('rental house')
@@ -108,6 +113,56 @@ class AdminOperationsChecklistTest extends TestCase
             ->get(route('admin.operations.index'))
             ->assertOk()
             ->assertSee('Asset document pack incomplete');
+    }
+
+    public function test_admin_can_upload_and_delete_private_asset_documents(): void
+    {
+        Storage::fake('local');
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $offering = $this->settledOffering();
+        $file = UploadedFile::fake()->create('valuation.pdf', 256, 'application/pdf');
+
+        $this->actingAs($admin)
+            ->post(route('admin.operations.documents.store', $offering), [
+                'document_key' => 'valuation_or_price_support',
+                'title' => 'Independent valuation',
+                'notes' => 'Uploaded for solicitor and accountant review.',
+                'document' => $file,
+            ])
+            ->assertRedirect(route('admin.operations.show', $offering));
+
+        $this->assertDatabaseHas('asset_documents', [
+            'offering_id' => $offering->id,
+            'property_id' => $offering->property_id,
+            'uploaded_by' => $admin->id,
+            'document_key' => 'valuation_or_price_support',
+            'title' => 'Independent valuation',
+            'original_filename' => 'valuation.pdf',
+            'review_status' => 'needs_review',
+        ]);
+
+        $document = $offering->assetDocuments()->firstOrFail();
+        Storage::disk('local')->assertExists($document->path);
+
+        $checklist = AssetOperationsChecklist::where('offering_id', $offering->id)->firstOrFail();
+        $this->assertTrue($checklist->required_documents['valuation_or_price_support']);
+
+        $this->actingAs($admin)
+            ->get(route('admin.operations.show', $offering))
+            ->assertOk()
+            ->assertSee('Independent valuation')
+            ->assertSee('needs review')
+            ->assertSee('valuation.pdf');
+
+        $this->actingAs($admin)
+            ->delete(route('admin.operations.documents.destroy', [$offering, $document]))
+            ->assertRedirect(route('admin.operations.show', $offering));
+
+        Storage::disk('local')->assertMissing($document->path);
+        $this->assertDatabaseMissing('asset_documents', [
+            'id' => $document->id,
+        ]);
     }
 
     private function settledOffering(): Offering

@@ -99,6 +99,11 @@ class Offering extends Model
         return $this->hasOne(AssetOperationsChecklist::class);
     }
 
+    public function assetDocuments()
+    {
+        return $this->hasMany(AssetDocument::class);
+    }
+
     public function hotelOperationsChecklist()
     {
         return $this->assetOperationsChecklist();

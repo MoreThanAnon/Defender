@@ -22,6 +22,8 @@
             'Operations checklists' => $summary['checklists'],
             'Reviewed' => $summary['reviewed'],
             'With health alerts' => $summary['with_health_alerts'],
+            'Uploaded documents' => $summary['uploaded_documents'],
+            'Documents needing review' => $summary['documents_needing_review'],
             'Legal review pending' => $summary['legal_pending'],
         ] as $label => $value)
             <div class="col-md-3 mb-3">

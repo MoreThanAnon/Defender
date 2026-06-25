@@ -23,6 +23,17 @@
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
 
+    @if($errors->any())
+        <div class="alert alert-danger">
+            <strong>Please check the form:</strong>
+            <ul class="mb-0">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <div class="alert alert-warning">
         <strong>Human review required:</strong>
         do not mark this investment, asset, property, or business structure as legally compliant from this checklist.
@@ -88,6 +99,101 @@
                         <textarea name="maintenance_tasks_text" class="form-control" rows="5"
                                   placeholder="One task per line, e.g. repair boiler, inspect roof, review lease, planning search, stock/fit-out check">{{ old('maintenance_tasks_text', $maintenanceLines) }}</textarea>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <h5 class="mb-0">Uploaded asset documents</h5>
+                <span class="badge bg-warning text-dark">Private admin files</span>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    Upload supporting documents against the checklist. Uploading a file marks that document type as gathered,
+                    but it does not mean the document has been legally, tax, regulatory, or commercially approved.
+                </p>
+
+                <form method="POST" action="{{ route('admin.operations.documents.store', $offering) }}" enctype="multipart/form-data" class="border rounded p-3 mb-4">
+                    @csrf
+                    <div class="row align-items-end">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Document type</label>
+                            <select name="document_key" class="form-select" required>
+                                @foreach($assetDocumentItems as $key => $item)
+                                    <option value="{{ $key }}" @selected(old('document_key') === $key)>{{ $item['label'] }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Display title</label>
+                            <input type="text" name="title" class="form-control" value="{{ old('title') }}" placeholder="Optional">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">File</label>
+                            <input type="file" name="document" class="form-control" required>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <button type="submit" class="btn btn-outline-primary w-100">Upload</button>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Notes</label>
+                            <textarea name="notes" class="form-control" rows="2" placeholder="What this file is, who supplied it, and what review is still needed">{{ old('notes') }}</textarea>
+                            <div class="form-text">Allowed: PDF, Word, Excel, CSV, images, TXT. Max 10MB.</div>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Title</th>
+                                <th>File</th>
+                                <th>Status</th>
+                                <th>Uploaded</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($offering->assetDocuments->sortByDesc('created_at') as $document)
+                                <tr>
+                                    <td>{{ $assetDocumentItems[$document->document_key]['label'] ?? $document->document_key }}</td>
+                                    <td>
+                                        <div>{{ $document->title }}</div>
+                                        @if($document->notes)
+                                            <div class="text-muted small">{{ $document->notes }}</div>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <div>{{ $document->original_filename }}</div>
+                                        <div class="text-muted small">{{ number_format($document->size_bytes / 1024, 1) }} KB</div>
+                                    </td>
+                                    <td><span class="badge bg-warning text-dark">{{ str_replace('_', ' ', $document->review_status) }}</span></td>
+                                    <td>
+                                        {{ $document->created_at?->diffForHumans() }}
+                                        @if($document->uploader)
+                                            <div class="text-muted small">by {{ $document->uploader->name ?? $document->uploader->email }}</div>
+                                        @endif
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{{ route('admin.operations.documents.download', [$offering, $document]) }}" class="btn btn-outline-secondary btn-sm">Download</a>
+                                        <form method="POST" action="{{ route('admin.operations.documents.destroy', [$offering, $document]) }}" class="d-inline"
+                                              onsubmit="return confirm('Delete this uploaded document?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="text-muted">No documents uploaded yet.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
