@@ -9,6 +9,7 @@ use App\Models\AssetOperationsChecklist;
 use App\Models\Offering;
 use App\Models\Property;
 use App\Models\User;
+use App\Services\AssetHealthService;
 use App\Services\Decidim\DecidimGovernanceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -148,17 +149,22 @@ class AdminController extends Controller
         }
     }
 
-    public function operations()
+    public function operations(AssetHealthService $health)
     {
         $offerings = Offering::with(['property', 'decidimGovernanceSpace', 'assetOperationsChecklist'])
+            ->withCount('decidimGovernanceSyncs')
             ->where('status', 'SETTLED')
             ->orderByDesc('updated_at')
             ->paginate(15);
+
+        $healthAlerts = $offerings->getCollection()
+            ->mapWithKeys(fn (Offering $offering) => [$offering->id => $health->alertsFor($offering)]);
 
         $summary = [
             'settled' => Offering::where('status', 'SETTLED')->count(),
             'checklists' => AssetOperationsChecklist::count(),
             'reviewed' => AssetOperationsChecklist::whereNotNull('reviewed_at')->count(),
+            'with_health_alerts' => $healthAlerts->filter(fn (array $alerts) => $alerts !== [])->count(),
             'legal_pending' => AssetOperationsChecklist::where(function ($query) {
                 $query->whereNull('legal_review')
                     ->orWhereJsonContains('legal_review->solicitor_review', false)
@@ -169,7 +175,7 @@ class AdminController extends Controller
             })->count(),
         ];
 
-        return view('admin.operations.index', compact('offerings', 'summary'));
+        return view('admin.operations.index', compact('offerings', 'summary', 'healthAlerts'));
     }
 
     public function showOperations(Offering $offering)

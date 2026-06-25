@@ -21,6 +21,7 @@
             'Settled offerings' => $summary['settled'],
             'Operations checklists' => $summary['checklists'],
             'Reviewed' => $summary['reviewed'],
+            'With health alerts' => $summary['with_health_alerts'],
             'Legal review pending' => $summary['legal_pending'],
         ] as $label => $value)
             <div class="col-md-3 mb-3">
@@ -46,6 +47,7 @@
                         <th>Property</th>
                         <th>Decidim</th>
                         <th>Checklist</th>
+                        <th>Health alerts</th>
                         <th>Last reviewed</th>
                         <th class="text-end">Action</th>
                     </tr>
@@ -71,6 +73,13 @@
                                     <span class="badge bg-warning">Not started</span>
                                 @endif
                             </td>
+                            <td style="min-width: 220px;">
+                                @forelse($healthAlerts[$offering->id] ?? [] as $alert)
+                                    <span class="badge bg-{{ $alert['level'] }} me-1 mb-1">{{ $alert['label'] }}</span>
+                                @empty
+                                    <span class="badge bg-success">No current alerts</span>
+                                @endforelse
+                            </td>
                             <td>{{ $offering->assetOperationsChecklist?->reviewed_at?->diffForHumans() ?? '—' }}</td>
                             <td class="text-end">
                                 <a href="{{ route('admin.operations.show', $offering) }}" class="btn btn-primary btn-sm">
@@ -80,7 +89,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-muted p-4">No settled offerings yet.</td>
+                            <td colspan="7" class="text-muted p-4">No settled offerings yet.</td>
                         </tr>
                     @endforelse
                 </tbody>

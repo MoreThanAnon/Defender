@@ -24,6 +24,9 @@ class AdminOperationsChecklistTest extends TestCase
             ->assertOk()
             ->assertSee('Asset Operations')
             ->assertSee('Legal review pending')
+            ->assertSee('With health alerts')
+            ->assertSee('No Decidim governance space')
+            ->assertSee('No investor roles synced')
             ->assertSee($offering->name);
 
         $this->actingAs($admin)

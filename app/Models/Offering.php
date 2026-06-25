@@ -89,6 +89,11 @@ class Offering extends Model
         return $this->hasOne(DecidimGovernanceSpace::class);
     }
 
+    public function decidimGovernanceSyncs()
+    {
+        return $this->hasMany(DecidimGovernanceSync::class);
+    }
+
     public function assetOperationsChecklist()
     {
         return $this->hasOne(AssetOperationsChecklist::class);
