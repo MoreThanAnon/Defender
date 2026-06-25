@@ -133,4 +133,6 @@ Route::prefix('test-runner')->name('test-runner.')->group(function () {
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/properties', [AdminController::class, 'properties'])->name('admin.properties.index');
+    Route::get('/decidim', [AdminController::class, 'decidim'])->name('admin.decidim.index');
+    Route::post('/decidim/offerings/{offering}/retry', [AdminController::class, 'retryDecidim'])->name('admin.decidim.retry');
 });

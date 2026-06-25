@@ -3,8 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Investment;
+use App\Models\DecidimGovernanceSpace;
+use App\Models\DecidimGovernanceSync;
+use App\Models\Offering;
 use App\Models\Property;
 use App\Models\User;
+use App\Services\Decidim\DecidimGovernanceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -48,6 +52,12 @@ class AdminController extends Controller
                 'url' => route('admin.users.index'),
                 'class' => 'warning',
             ],
+            [
+                'label' => 'Decidim Integration',
+                'description' => 'Check governance sync status, Assembly URLs, investor access and retries.',
+                'url' => route('admin.decidim.index'),
+                'class' => 'info',
+            ],
         ];
 
         return view('admin.dashboard', compact(
@@ -77,6 +87,51 @@ class AdminController extends Controller
         $users = User::orderBy('id')->paginate(25);
 
         return view('admin.users', compact('users'));
+    }
+
+    public function decidim()
+    {
+        $spaces = DecidimGovernanceSpace::with(['offering.property', 'property'])
+            ->orderByDesc('updated_at')
+            ->paginate(15);
+
+        $syncCounts = DecidimGovernanceSync::query()
+            ->select('offering_id', DB::raw('count(*) as total'))
+            ->groupBy('offering_id')
+            ->pluck('total', 'offering_id');
+
+        $offeringsWithoutSpaces = Offering::with('property')
+            ->where('status', 'SETTLED')
+            ->whereDoesntHave('decidimGovernanceSpace')
+            ->orderByDesc('updated_at')
+            ->take(15)
+            ->get();
+
+        $summary = [
+            'spaces_total' => DecidimGovernanceSpace::count(),
+            'created' => DecidimGovernanceSpace::where('status', 'created')->count(),
+            'failed' => DecidimGovernanceSpace::where('status', 'failed')->count(),
+            'pending' => DecidimGovernanceSpace::where('status', 'pending')->count(),
+            'synced_roles' => DecidimGovernanceSync::count(),
+            'settled_without_space' => Offering::where('status', 'SETTLED')->whereDoesntHave('decidimGovernanceSpace')->count(),
+        ];
+
+        return view('admin.decidim', compact('spaces', 'syncCounts', 'offeringsWithoutSpaces', 'summary'));
+    }
+
+    public function retryDecidim(Offering $offering, DecidimGovernanceService $governance)
+    {
+        try {
+            $space = $governance->createGovernanceForSettledOffering($offering->fresh(['property', 'equityPositions', 'loanNotes']));
+
+            return redirect()
+                ->route('admin.decidim.index')
+                ->with('success', "Decidim sync completed for offering #{$offering->id}. Status: {$space->status}.");
+        } catch (\Throwable $e) {
+            return redirect()
+                ->route('admin.decidim.index')
+                ->with('error', "Decidim sync failed for offering #{$offering->id}: {$e->getMessage()}");
+        }
     }
 
     public function impersonate(Request $request)
