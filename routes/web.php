@@ -49,6 +49,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/dashboard', [AuthController::class, 'dashboard'])->name('dashboard');
     Route::get('/home', [HomeController::class, 'index'])->name('home');
+    Route::get('/my-assets', [HomeController::class, 'myAssets'])->name('my-assets');
     Route::post('/decidim/sync-offering/{offering}', [DecidimController::class, 'syncOffering'])->name('decidim.sync');
 
     Route::get('/email/verify', fn () => view('auth.verify'))->name('verification.notice');

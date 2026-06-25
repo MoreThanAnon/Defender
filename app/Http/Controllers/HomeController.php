@@ -8,8 +8,11 @@ use Illuminate\Http\Request;
 use App\Models\withdrawal;
 use App\Models\User;
 use App\Models\Bid;
+use App\Models\DecidimGovernanceSync;
 use App\Models\EquityPosition;
 use App\Models\Investment;
+use App\Models\LoanNote;
+use App\Models\Offering;
 
 class HomeController extends Controller
 {
@@ -79,5 +82,39 @@ class HomeController extends Controller
             'currentBids' => $currentBids,
             'ownershipPercentages' => $ownershipPercentages,
         ]);
+    }
+
+    public function myAssets()
+    {
+        $userId = auth()->id();
+
+        $equityOfferingIds = EquityPosition::where('holder_user_id', $userId)->pluck('offering_id');
+        $loanOfferingIds = LoanNote::where('investor_id', $userId)
+            ->orWhere('lender_user_id', $userId)
+            ->pluck('offering_id');
+        $syncOfferingIds = DecidimGovernanceSync::where('investor_id', $userId)->pluck('offering_id');
+
+        $offeringIds = $equityOfferingIds
+            ->merge($loanOfferingIds)
+            ->merge($syncOfferingIds)
+            ->unique()
+            ->values();
+
+        $offerings = Offering::with([
+            'property',
+            'decidimGovernanceSpace',
+            'assetOperationsChecklist',
+            'equityPositions' => fn ($query) => $query->where('holder_user_id', $userId),
+            'loanNotes' => fn ($query) => $query->where('investor_id', $userId)->orWhere('lender_user_id', $userId),
+        ])
+            ->whereIn('id', $offeringIds)
+            ->orderByDesc('updated_at')
+            ->get();
+
+        $syncs = DecidimGovernanceSync::where('investor_id', $userId)
+            ->get()
+            ->groupBy('offering_id');
+
+        return view('my-assets', compact('offerings', 'syncs'));
     }
 }

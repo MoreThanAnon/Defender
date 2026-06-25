@@ -27,6 +27,14 @@
                     </a>
                 </li>
 
+                @auth
+                    <li class="nav-item">
+                        <a class="nav-link {{ Request::routeIs('my-assets') ? 'active fw-semibold text-primary' : '' }}" href="{{ route('my-assets') }}">
+                            My Assets
+                        </a>
+                    </li>
+                @endauth
+
                 <li class="nav-item">
                     <a class="nav-link {{ Request::routeIs('test-runner.*') ? 'active fw-semibold text-primary' : '' }}" href="{{ route('test-runner.index') }}">
                         Test Runner
