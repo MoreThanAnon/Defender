@@ -1,0 +1,24 @@
+{
+    "name": "local/business-core",
+    "description": "Reusable multi-business operating module for Laravel: tenants, roles, bank statement import, reconciliation, budgets, proposals, payment tasks, documents, reports and audit log. Non-custodial: it never moves money.",
+    "type": "library",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.1",
+        "illuminate/support": "^10.0|^11.0",
+        "illuminate/database": "^10.0|^11.0",
+        "illuminate/http": "^10.0|^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "BusinessCore\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "BusinessCore\\BusinessCoreServiceProvider"
+            ]
+        }
+    }
+}

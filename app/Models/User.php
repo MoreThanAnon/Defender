@@ -2,85 +2,33 @@
 
 namespace App\Models;
 
+use BusinessCore\Concerns\HasBusinesses;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Cashier\Billable;
-use Laravel\Sanctum\HasApiTokens;
-use Tymon\JWTAuth\Contracts\JWTSubject;
 
-class User extends Authenticatable implements MustVerifyEmail, JWTSubject
+class User extends Authenticatable implements MustVerifyEmail
 {
-    use Billable;
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasBusinesses, HasFactory, Notifiable;
 
-    protected $fillable = [
-        'name',
-        'username',
-        'email',
-        'password',
-        'role',
-        'real_name',
-        'funds',
-        'pm_type',
-        'pm_last_four',
-        'balance',
-        'eircode_region',
-    ];
+    /** Platform-level roles. What someone may do inside a business lives on their membership, not here. */
+    public const ROLE_USER = 'user';
+    public const ROLE_ADMIN = 'admin';
 
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+    // "role" is deliberately not fillable: it can only be set in code, never from a form.
+    protected $fillable = ['username', 'real_name', 'email', 'password'];
+
+    protected $hidden = ['password', 'remember_token'];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
 
-    public function hasRole(string $role): bool
+    /** The platform operator: sees every business read-only and manages storage / go-live. */
+    public function isPlatformAdmin(): bool
     {
-        return $this->role === $role;
-    }
-
-    public function roles()
-    {
-        return $this->belongsToMany(Role::class);
-    }
-
-    public function bids()
-    {
-        return $this->hasMany(Bid::class);
-    }
-
-    public function investments()
-    {
-        return $this->hasMany(Investment::class);
-    }
-
-    public function deposits()
-    {
-        return $this->hasMany(Deposit::class);
-    }
-
-    public function withdrawals()
-    {
-        return $this->hasMany(withdrawal::class);
-    }
-
-    public function address()
-    {
-        return $this->hasOne(Address::class);
-    }
-
-    public function getJWTIdentifier()
-    {
-        return $this->getKey();
-    }
-
-    public function getJWTCustomClaims()
-    {
-        return [];
+        return $this->role === self::ROLE_ADMIN;
     }
 }

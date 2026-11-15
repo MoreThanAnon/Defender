@@ -2,37 +2,37 @@
 
 namespace Database\Seeders;
 
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
 use App\Models\User;
-use App\Models\Role;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
     /**
-     * Seed the application's database.
+     * Creates the platform administrator if there is none. An existing admin is never touched.
+     * Set DEFENDER_ADMIN_EMAIL / DEFENDER_ADMIN_PASSWORD in .env, or a random password is printed once.
      */
     public function run(): void
     {
+        if (! User::where('role', User::ROLE_ADMIN)->exists()) {
+            $password = env('DEFENDER_ADMIN_PASSWORD') ?: Str::password(20);
 
-        $this->call(PropertyStatusSeeder::class);
-        $this->call(PropertiesTableSeeder::class);
-        $this->call(EircodeAddressesTableSeeder::class);
-        $this->call(AdminSeeder::class);
-        $this->call(DefenderOrgStewardSeeder::class);
+            $admin = new User([
+                'username' => 'admin',
+                'email' => env('DEFENDER_ADMIN_EMAIL', 'admin@example.com'),
+                'password' => $password,
+            ]);
+            $admin->role = User::ROLE_ADMIN;
+            $admin->email_verified_at = now();
+            $admin->save();
 
-        $userRole = Role::firstOrCreate(['name' => 'user']);
+            if (! env('DEFENDER_ADMIN_PASSWORD')) {
+                $this->command?->warn("Platform admin created: username \"admin\", password: $password  (shown once; change it under My account)");
+            }
+        }
 
-        // Create a regular user and assign role
-        $user = User::updateOrCreate(
-            ['email' => 'user@example.com'],
-            [
-                'username' => 'Regular User',
-                'email' => 'user@example.com',
-                'password' => bcrypt('password'),
-                'role' => 'user',
-            ]
-        );
-        $user->roles()->syncWithoutDetaching([$userRole->id]);
+        if (app()->environment('local')) {
+            $this->call(DemoBusinessSeeder::class);
+        }
     }
 }

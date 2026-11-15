@@ -1,0 +1,9 @@
+Account: DEMO CURRENT ACCOUNT (fake data)
+
+Date,Details,Debit,Credit,Balance
+01/10/2026,Opening lodgement,,"20,000.00","20,000.00"
+03/10/2026,Member contribution J Murphy,,"1,000.00","21,000.00"
+07/10/2026,ESB Networks DD,185.40,,"20,814.60"
+12/10/2026,Hardware store materials,475.00,,"20,339.60"
+20/10/2026,Insurance premium,650.00,,"19,689.60"
+28/10/2026,Rent received Unit 2,,"1,710.40","21,400.00"

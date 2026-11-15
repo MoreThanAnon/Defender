@@ -130,7 +130,7 @@
             <div class="auth-card card p-4 p-md-5">
                 <h2 class="text-center mb-4 auth-title">{{ __('Login') }}</h2>
                 <p class="text-center text-muted small mb-4">
-                    Sign in to Defender. Governance opens from Defender after you are signed in; participants never need a separate Decidim login.
+                    Sign in to manage your businesses.
                 </p>
 
                 @if ($errors->any())

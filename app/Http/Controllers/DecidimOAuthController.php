@@ -88,8 +88,8 @@ class DecidimOAuthController extends Controller
         return response()->json([
             'id' => (string) $user->getKey(),
             'email' => $user->email,
-            'name' => $user->real_name ?: $user->name ?: $user->username,
-            'nickname' => $user->username ?: Str::slug($user->name),
+            'name' => $user->real_name ?: $user->username,
+            'nickname' => $user->username,
             'avatar_url' => null,
         ]);
     }

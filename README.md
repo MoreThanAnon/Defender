@@ -1,75 +1,93 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Defender
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A business operating interface. Not a bank, not a crowdfunding platform.
 
-## About Laravel
+An independently owned business views its finances, coordinates its people, approves work and tracks
+operations here, while its own bank and its own directors keep control of every euro. Defender never
+receives, holds or moves customer money and never asks for banking passwords.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## How the code is laid out
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+| Where | What |
+| --- | --- |
+| `packages/business-core/` | **The reusable module.** All business logic, database tables, screens and routes. Knows nothing about Defender. |
+| `app/`, `routes/web.php`, `resources/views/auth` | The Defender host: sign-in, registration, password reset, account page, landing page. |
+| `app/Http/Controllers/DecidimOAuthController.php`, `app/Services/DecidimUserProvisioningService.php` | Optional Decidim single sign-on proof of concept. Off unless `DECIDIM_ENABLED=true`. |
+| `docs/legacy/` | The retired May/June 2026 fundraising design note, kept for history only. |
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## What a business gets
+
+One record per house, business or piece of land. Inside each:
+
+- **Dashboard**: bank balance with its source and date, money in/out, things needing attention
+- **Bank**: upload a CSV statement, categorise lines, assign to projects, match to payment tasks
+- **Budgets & projects**, with an asset register: budget against bank-confirmed spend
+- **Proposals**: discuss, vote (one person one vote, quorum), director records the decision
+- **Payments**: prepared instructions only. You pay in your own bank; a statement line confirms it
+- **Tasks**, **Suppliers**, **Records** (private document storage), **People** (roles and invitations)
+- **Reports**: monthly management report (print to PDF, CSV), sign-off, audit history, full zip export
+
+Roles: director, finance lead, site/operator, member, accountant/auditor. Edit them in
+`config/business-core.php` (publish it first, see below).
+
+### Storage and live
+
+Every business starts **in storage**: a sandbox clearly labelled as practice data. The platform
+administrator (`users.role = 'admin'`) has a *Storage & admin* screen listing every business, can
+shelve new ones, hand one to its real owner, and mark it **live** from the business's Settings once the
+real company and its bank account have been checked. Going live records the registered name, number and
+bank, and can wipe practice statements. The administrator sees other people's businesses read-only.
 
 ## Setup
 
-Copy `.env.example` to `.env` and update the following variables with your own
-values:
+```bash
+composer install
+cp .env.example .env && php artisan key:generate
+php artisan migrate
+php artisan db:seed      # creates the platform admin if none exists; locally also a demo business
+php artisan test
+```
 
-- `STRIPE_SECRET`
-- `STRIPE_KEY`
-- `EIRCODE_JSON_PATH`
+Served by WAMP at `http://localhost/defender/public/`. No front-end build step is needed; pages use
+Bootstrap from a CDN.
 
-## Learning Laravel
+Upgrading a database from the old investment platform: `php artisan migrate` runs
+`drop_legacy_investment_schema`, which removes the old tables and the money columns on `users`. It cannot
+be undone, so take a dump first.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Using business-core in another Laravel project
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+1. Copy `packages/business-core` into the other project (or move it to its own git repository).
+2. In that project's `composer.json`:
+   ```json
+   "repositories": [{ "type": "path", "url": "packages/business-core" }],
+   "require": { "local/business-core": "@dev" }
+   ```
+   then `composer update local/business-core`. The service provider is auto-discovered.
+3. Add `use BusinessCore\Concerns\HasBusinesses;` to the User model and override `isPlatformAdmin()`.
+4. `php artisan migrate`. Screens are at `/businesses`.
+5. Optional: `php artisan vendor:publish --tag=business-core-config` to change roles, business types,
+   categories, the route prefix, the layout (`layout`), or which user attribute is shown as a name
+   (`user_display`). `--tag=business-core-views` copies the Blade files for restyling.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+It needs a `login` route and the `auth` middleware from the host, and nothing else.
 
-## Laravel Sponsors
+Extension points, all in `BusinessCore\Contracts`:
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+- `StatementParser`: bind your own to read another bank format
+- `AuditRecorder`: send audit events somewhere else as well
+- `BankConnector`: placeholder for a future read-only feed from a licensed provider; not implemented
 
-### Premium Partners
+## Rules the code enforces
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+- Every tenant table has `business_id`; queries are scoped to the current business and a URL that
+  names another business's record returns 404 (`tests/Feature/TenantIsolationTest.php`).
+- Imported bank lines cannot be edited. Audit events cannot be edited or deleted.
+- A statement file imports whole or not at all, and never twice.
+- A payment task is only "confirmed" by a bank statement line for the same amount.
+- A balance is always shown with its source and as-of date, and flagged when stale.
 
-## Contributing
+## Not built yet
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Two-factor sign-in, emailing invitations (a link is shown to copy), Defender's own subscription
+billing, OFX import, the ownership viewer, maps, cameras and the 3D twin.

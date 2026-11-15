@@ -11,6 +11,14 @@ class DecidimUserProvisioningService
 {
     public function provision(User $user): array
     {
+        if (! Config::get('decidim.enabled') || Config::get('decidim.dry_run')) {
+            return [
+                'success' => true,
+                'skipped' => true,
+                'reason' => Config::get('decidim.dry_run') ? 'dry_run' : 'disabled',
+            ];
+        }
+
         $token = Config::get('decidim.property_governance_token');
         $baseUrl = Config::get('decidim.base_url');
 
@@ -25,7 +33,7 @@ class DecidimUserProvisioningService
             ->post(rtrim($baseUrl, '/').'/api/property_governance/users', [
                 'laravel_user_id' => (string) $user->getKey(),
                 'email' => $user->email,
-                'name' => $user->real_name ?: $user->display_name ?: $user->username,
+                'name' => $user->real_name ?: $user->username,
                 'nickname' => $user->username,
             ]);
 

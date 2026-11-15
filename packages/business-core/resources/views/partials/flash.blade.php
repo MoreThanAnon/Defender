@@ -1,0 +1,12 @@
+@if (session('status'))
+    <div class="alert alert-success" role="status" style="word-break: break-word">{{ session('status') }}</div>
+@endif
+@if (isset($errors) && $errors->any())
+    <div class="alert alert-danger" role="alert">
+        <ul class="mb-0 ps-3">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
